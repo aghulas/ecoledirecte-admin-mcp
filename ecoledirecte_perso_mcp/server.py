@@ -2,8 +2,9 @@
 
 Complète le serveur admin : ici on lit ce que voit un compte personnel sur
 www.ecoledirecte.com — messagerie (liste seule), agenda, rendez-vous, cahier de
-liaison, documents, post-it, et surtout la CONSULTATION des élèves par classe
-(coordonnées élèves/parents, absentes de l'API admin). Voir
+liaison, documents, post-it, et la CONSULTATION des élèves par classe (fiches
+élèves : email/portable de l'élève, régime, dispositifs, responsables SANS
+coordonnées — données absentes de l'API admin). Voir
 docs/cartographie-api-personnel.md.
 
 Aucune écriture. Aucun outil n'ouvre un message individuel (cela le marquerait
@@ -24,8 +25,8 @@ mcp = MCPServer(
     instructions=(
         "Accès en LECTURE SEULE à l'espace personnel EcoleDirecte d'un compte "
         "personnel (secrétariat) de l'école l'établissement, via l'API interne du site "
-        "www.ecoledirecte.com. Sert surtout à consulter les coordonnées élèves/parents "
-        "par classe et l'activité de communication. Données personnelles : n'extraire "
+        "www.ecoledirecte.com. Sert à consulter les fiches élèves par classe et "
+        "l'activité de communication. Données personnelles : n'extraire "
         "que ce qui est nécessaire. Ne jamais ouvrir un message individuel."
     ),
 )
@@ -48,12 +49,17 @@ async def ed_perso_session_info() -> Any:
 
 
 @mcp.tool()
-async def ed_perso_classe_eleves(id_classe: str) -> Any:
-    """Élèves d'une classe avec leurs coordonnées (et contacts responsables :
-    email, téléphone selon le paramétrage). `id_classe` = identifiant interne de
-    la classe (le même que `idClasse`/`id` côté serveur admin, ex. '8' pour CM2 B).
-    C'est la donnée de contact que l'API admin n'exposait pas."""
-    return await _get_client().classe_eleves(id_classe)
+async def ed_perso_classe_eleves(id_classe: str, include_sensitive_fields: bool = False) -> Any:
+    """Élèves d'une classe : nom, prénom, sexe, régime, dates d'entrée/sortie,
+    dispenses/dispositifs, `email` et `portable` DE L'ÉLÈVE, et la liste des
+    responsables (civilité, nom, prénom, rôle). `id_classe` = identifiant interne
+    de la classe, le même que côté serveur admin (ex. '8' pour CM2 B).
+
+    ⚠️ Les responsables n'ont PAS de coordonnées ici (ni email ni téléphone) —
+    l'API ne les expose pas sur cette route.
+    `dateNaissance`, `numeroBadge` et `photo` sont retirés sauf
+    include_sensitive_fields=True."""
+    return await _get_client().classe_eleves(id_classe, include_sensitive_fields)
 
 
 @mcp.tool()
