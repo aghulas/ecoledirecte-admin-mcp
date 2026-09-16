@@ -108,3 +108,28 @@ Aucun effet de bord constaté (contrairement à l'ouverture d'un message) : ce n
 qu'une consultation. Pas de champ santé/allergie/handicap observé sur ces deux
 endpoints. Implémenté dans `ed_perso_eleve_coordonnees_famille`, avec redaction par
 défaut de `profession`/`societe`/`csp` (cf. §6).
+
+
+## 8. Cantine / étude / garderie — pas trouvé côté EcoleDirecte (16/09/2026)
+
+Cherché à la demande de [prénom] si les inscriptions cantine/étude du soir/garderie
+du matin par élève sont consultables. Négatif, sur tout ce qui a été exploré :
+
+- `activites/familles` (API admin) : référentiel des types d'activités de suivi
+  pour l'école — seulement `MIDI` (Restauration du midi) et `SOIR` (Restauration
+  du soir) configurés. Pas d'étude ni de garderie définies. Et c'est un
+  référentiel de types, pas une liste d'inscriptions par élève.
+- Vie scolaire (classe et élève, `/C/{cls}/VieScolaire` et fiche élève) :
+  absences/retards, sanctions/punitions/incidents, suivi du comportement
+  hebdomadaire. Rien sur les repas/activités périscolaires.
+- Connecteurs partenaires (API admin, `connecteurs`) : deux applis de
+  restauration scolaire existent au catalogue EcoleDirecte (**ALISE**,
+  **SKOLENGO RESTAURATION** anciennement Cater) mais **aucune n'est activée**
+  pour l'établissement (`isActifEtab: false`) — donc pas de module cantine
+  intégré à EcoleDirecte pour l'établissement actuellement.
+
+Conclusion provisoire : cette donnée ne semble pas être dans EcoleDirecte pour
+cette école. Piste la plus probable : le module périscolaire de **Charlemagne**
+(projet séparé de base consolidée déjà en cours). À confirmer avec la
+secrétariat/direction — il est possible que ce suivi soit géré ailleurs encore
+(tableur, prestataire externe).
