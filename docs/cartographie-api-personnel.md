@@ -133,3 +133,21 @@ cette école. Piste la plus probable : le module périscolaire de **Charlemagne*
 (projet séparé de base consolidée déjà en cours). À confirmer avec la
 secrétariat/direction — il est possible que ce suivi soit géré ailleurs encore
 (tableur, prestataire externe).
+
+**Complément (doc communautaire EduWireApps/ecoledirecte-api-docs, 16/09/2026)** :
+la doc non-officielle liste des endpoints EcoleDirecte natifs de restauration,
+absents de ce qu'on avait observé par le navigateur (l'app ne les appelle
+peut-être pas si le module n'est pas activé) :
+- `menusRestaurationScolaire.awp` — menus de la semaine. **Testé en réel : `200`,
+  liste vide** (rien publié pour l'instant, pas forcément désactivé).
+- `E/{id}/commandesPassage.awp` — réservation/commande de repas à l'unité
+  (« click & collect »), par élève. **Testé en réel : `403` refusé** pour le
+  compte secrétariat (`A`) — réservé aux comptes famille/élève, ou non activé.
+- `eleves/{id}/viescolaire.awp` — **testé en réel : `210` « Aucune donnée à
+  afficher »**, cohérent avec l'écran Vie scolaire vu dans le navigateur.
+
+Aucun de ces trois ne donne une liste d'inscriptions récurrentes (jours fixes de
+cantine/étude/garderie par élève) — `commandesPassage` est un système de
+réservation à l'unité (repas par repas), pas un forfait hebdomadaire, et de
+toute façon inaccessible depuis ce compte. Ça ne change pas la conclusion :
+priorité à vérifier du côté Charlemagne.
