@@ -1,7 +1,8 @@
 # ecoledirecte-mcp (prototype)
 
-Deux serveurs MCP **en lecture seule** vers EcoleDirecte (école l'établissement,
-[ville]), APIs internes non documentées :
+Deux serveurs MCP vers EcoleDirecte (école l'établissement, [ville]), APIs
+internes non documentées, **en lecture seule à une exception près**
+(`ed_admin_parametre_set`, voir plus bas) :
 
 - **`ecoledirecte-admin`** — console admin (`admin.ecoledirecte.com`) :
   annuaire des comptes, classes, paramétrages, stats, synchros Charlemagne.
@@ -22,6 +23,10 @@ Basé sur l'API interne `api.ecoledirecte.com/v3/admin/`.
 profs, personnels), classes, paramétrages, statistiques de connexion, état des
 synchros Charlemagne. **Pas** de factures, notes ni messages : l'API admin ne les
 contient pas (voir cartographie §1 et §5).
+
+**⚠️ Écriture** : `ed_admin_parametre_set` peut modifier UN paramètre
+établissement — c'est la seule exception à la lecture seule, dans tout le
+connecteur (les deux serveurs). Voir la section dédiée plus bas.
 
 ## Installation
 
@@ -73,16 +78,38 @@ Une seule fois, dans le Terminal :
 | `ed_admin_activites_list` | activités de suivi (cantine, étude…) |
 | `ed_admin_referentiels_get` | sanctions, catégories de suivi, tags CDT, salles… |
 | `ed_admin_activation_comptes(classe?, inclure_noms?)` | activation des comptes par classe : élèves sans aucun parent connecté, responsables jamais connectés, taux |
+| `ed_admin_parametre_set(libelle, valeur, confirm?)` | **ÉCRITURE** — modifie un paramètre établissement. Sans `confirm=True` : aperçu seulement, rien n'est écrit |
 
 ## Garde-fous (testés, `pytest`)
 
-- Seul `verbe=get` peut partir du client : aucune écriture possible.
+- Seul `verbe=get` peut partir du client, **sauf `set_parametre`** (la seule
+  méthode d'écriture, explicitement isolée — voir ci-dessous).
 - Bloqués même en lecture : `compteOrigineED`, `supervisionmobile`, `supervision`
   (identifiants d'autres utilisateurs / usurpation de session), gestion des logins,
   `banques`, fichiers.
 - `badge` et `photo` retirés des fiches par défaut (`include_sensitive_fields=True` pour les obtenir).
 - Paramètres ressemblant à des secrets (clés, certificats, mots de passe, IBAN…) masqués.
 - Aucun token ni mot de passe dans les messages d'erreur.
+
+### ⚠️ Écriture : `ed_admin_parametre_set` (seule exception, depuis v0.4)
+
+- Modifie UN paramètre établissement (`POST parametres.awp?verbe=post`, même
+  endpoint que l'interface admin elle-même). Détails techniques et méthode de
+  cartographie (lecture statique du JS du front, aucun appel d'écriture
+  déclenché avant l'implémentation) : voir `docs/cartographie-api-admin.md` §7.
+- **Sans `confirm=True` : aperçu seulement**, rien n'est écrit — valeur actuelle
+  vs proposée. Il faut rappeler explicitement avec `confirm=True` pour écrire
+  pour de vrai ; l'outil relit alors immédiatement le paramètre pour confirmer
+  que le changement a pris.
+- Refusé d'office (avant tout appel réseau) pour les paramètres secrets ou pour
+  ceux que l'interface admin elle-même exclut de l'édition générique (banque,
+  connecteurs partenaires, délais réglementaires…).
+- Règle de fonctionnement (pas seulement garde-fou logiciel) : Claude demande
+  toujours l'accord explicite de [prénom] en conversation avant un appel réel avec
+  `confirm=True`.
+- Aucun environnement de test séparé utilisé (décision explicite) : premiers
+  essais à faire directement sur l'établissement réel, sur un paramètre à
+  faible impact et réversible.
 
 ```bash
 ./.venv/bin/pytest

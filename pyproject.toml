@@ -1,6 +1,6 @@
 [project]
 name = "ecoledirecte-admin-mcp"
-version = "0.3.0"
+version = "0.4.0"
 description = "Serveur MCP en lecture seule vers la console admin.ecoledirecte.com (API v3/admin non documentée)"
 requires-python = ">=3.10"
 dependencies = [

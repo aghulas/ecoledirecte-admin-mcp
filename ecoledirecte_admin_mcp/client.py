@@ -7,7 +7,9 @@ Protocole (confirmé le 15/09/2026, voir docs/cartographie-api-admin.md §2) :
   réponse : {"code": 200, "token": "<nouveau token>", "host": "HTTPxxx", "data": {...}}
 
 Garde-fous appliqués AU NIVEAU DU CLIENT (pas seulement par absence d'outil) :
-  1. Seul `verbe=get` est autorisé — aucune écriture possible via ce client.
+  1. Par défaut, seul `verbe=get` est autorisé (check_allowed) — aucune écriture
+     possible pour toutes les méthodes de lecture (session_info, classes,
+     utilisateurs, stats, synchros, connecteurs, activites, etc.).
   2. Liste d'endpoints interdits même en GET, car ils renvoient des secrets
      d'authentification d'autres utilisateurs ou ouvrent une session à leur place :
        - compteOrigineED/<type>/<id>  → identifiant + mot de passe de 1re connexion
@@ -16,6 +18,15 @@ Garde-fous appliqués AU NIVEAU DU CLIENT (pas seulement par absence d'outil) :
        - loginsED, blockingState, logins/, loginCreation, reinitLogin → gestion des comptes
        - banques                       → coordonnées bancaires de l'établissement
        - televersement, telechargement → fichiers
+  3. EXCEPTION UNIQUE ET EXPLICITE (16/09/2026) : `set_parametre()` peut écrire
+     UN paramètre établissement (`POST parametres.awp?verbe=post`, même endpoint
+     que le front admin lui-même — service Angular ParametresService). C'est la
+     SEULE méthode d'écriture de tout le client ; elle ne passe jamais par
+     check_allowed et vit dans son propre chemin de code, bien identifié.
+     Refuse d'office les paramètres secrets (is_secret_param) et ceux que
+     l'interface admin exclut elle-même de l'édition générique (bancaire,
+     connecteurs, délais réglementaires — voir _FRONT_EXCLUDED_PARAM_MARKERS).
+     Sans confirm=True, ne fait qu'un aperçu (rien n'est écrit).
 """
 from __future__ import annotations
 
@@ -83,6 +94,38 @@ _SECRET_RE = re.compile(
 
 def is_secret_param(libelle: str) -> bool:
     return bool(_SECRET_RE.search(_normalize(libelle)))
+
+
+# Paramètres que l'écran admin "Paramétrages" exclut LUI-MÊME de l'édition
+# générique (service ParametresService.listeParametres, front admin, relevé le
+# 16/09/2026) — réglages bancaires, clés de connecteurs partenaires, délais
+# réglementaires notes/LSU. On applique la même exclusion côté connecteur.
+_FRONT_EXCLUDED_PARAM_MARKERS: tuple[str, ...] = (
+    "sites/familles/comptabilite/reglementsenligne/banque",
+    "sites/familles/comptabilite/reglementsenligne/environnement",
+    "sites/familles/comptabilite/reglementsenligne/montantminimum",
+    "sites/familles/comptabilite/reglementsenligne/notpe",
+    "notes/nbrejoursdecalage",
+    "moyennes/nbrejoursapresdateconseil",
+    "appreciations/nbrejoursapresdateconseil",
+    "sites/inscriptions/nbvoeux",
+    "lsun/nbrejoursdecalage",
+    "sites/familles/connecteurcater/etablissement_0/iddossieracia",
+    "sites/familles/connecteuresidoc/etablissement_0/nombreportailssupplementaires",
+    "sites/professeurs/connecteurpearltrees/etablissement_0/rne",
+    "sites/eleves/connecteuredumalin/etablissement_0/url",
+    "sites/parametrage/nombrepostit",
+    "sites/parametrage/nombreagenda",
+    "messagerie/apiversion",
+    "ent/espacesclasses/droitsmembres",
+    "sites/connecteurs/tabuleo/apikey",
+    "sites/validitemdp/nbjours",
+)
+
+
+def is_front_excluded_param(libelle: str) -> bool:
+    norm = _normalize(libelle)
+    return any(marker in norm for marker in _FRONT_EXCLUDED_PARAM_MARKERS)
 
 
 def redact_parametres(parametres: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -243,3 +286,89 @@ class EcoleDirecteAdminClient:
 
     async def list_lsu_competences_numeriques(self) -> Any:
         return await self.get("LSU/CompNumeriques/classes")
+
+    # ------------------------------------------------------------------
+    # ÉCRITURE — exception unique et explicite au reste du client (cf. docstring
+    # de module). Ne passe jamais par check_allowed().
+    # ------------------------------------------------------------------
+    async def set_parametre(self, libelle: str, valeur: str, confirm: bool = False) -> dict[str, Any]:
+        """Modifie UN paramètre établissement (POST verbe=post sur `parametres`,
+        même endpoint que le front admin — ParametresService.saveParams).
+
+        Sans confirm=True : n'écrit RIEN, renvoie juste un aperçu (valeur actuelle
+        vs proposée) pour relecture avant d'écrire pour de vrai. Avec confirm=True :
+        écrit, puis relit immédiatement le paramètre pour confirmer l'application.
+
+        Refuse d'office (ForbiddenEndpointError, avant tout appel réseau d'écriture)
+        les paramètres ressemblant à un secret (is_secret_param) ou faisant partie
+        de la liste que l'interface admin elle-même exclut de l'édition générique
+        (is_front_excluded_param : bancaire, connecteurs, délais réglementaires)."""
+        if is_secret_param(libelle):
+            raise ForbiddenEndpointError(
+                f"'{libelle}' ressemble à un paramètre secret (clé, mot de passe, "
+                "IBAN…) — écriture refusée par ce connecteur."
+            )
+        if is_front_excluded_param(libelle):
+            raise ForbiddenEndpointError(
+                f"'{libelle}' fait partie des paramètres que l'interface admin "
+                "elle-même exclut de l'édition générique (bancaire, connecteurs, "
+                "délais réglementaires…) — écriture refusée par ce connecteur."
+            )
+        current = await self.get_parametres([libelle])
+        if not current:
+            raise EcoleDirecteApiError(f"Paramètre '{libelle}' introuvable.")
+        entry = dict(current[0])
+        valeur_actuelle = entry.get("valeur")
+        if not confirm:
+            return {
+                "libelle": libelle,
+                "valeur_actuelle": valeur_actuelle,
+                "valeur_proposee": valeur,
+                "ecriture_effectuee": False,
+                "message": "Aperçu seulement, rien n'a été écrit — rappelle avec confirm=True pour appliquer.",
+            }
+        entry["valeur"] = valeur
+        session = await self._auth.ensure_session(self._http)
+        payload = await self._post_write_raw("parametres", {"parametres": [entry]}, session.token)
+        code = payload.get("code")
+        self._auth.update_token(payload.get("token"))
+        if code != 200:
+            raise EcoleDirecteApiError(
+                f"Écriture de '{libelle}' refusée : code {code} — {payload.get('message') or 'sans message'}"
+            )
+        relu = await self.get_parametres([libelle])
+        valeur_apres = relu[0].get("valeur") if relu else None
+        return {
+            "libelle": libelle,
+            "valeur_avant": valeur_actuelle,
+            "valeur_demandee": valeur,
+            "valeur_apres": valeur_apres,
+            "ecriture_effectuee": True,
+            "coherent": valeur_apres == valeur,
+        }
+
+    async def _post_write_raw(self, path: str, data: dict[str, Any], token: str) -> dict[str, Any]:
+        """Variante ÉCRITURE de _post_raw (verbe=post) — utilisée UNIQUEMENT par
+        set_parametre. Ne passe jamais par check_allowed (qui bloque tout non-GET
+        par conception) : c'est le point d'entrée volontaire et unique d'écriture
+        de tout le client."""
+        url = f"{SETTINGS.api_base}{path.strip('/')}.awp?verbe=post"
+        body = encode_form_data({**(data or {}), "token": token})
+        try:
+            resp = await self._http.post(
+                url, content=body,
+                headers={"Content-Type": "application/x-www-form-urlencoded",
+                         "Accept": "application/json, text/plain, */*",
+                         "x-token": token, "User-Agent": SETTINGS.user_agent},
+            )
+        except httpx.HTTPError as exc:
+            raise EcoleDirecteApiError(f"POST {path} : erreur réseau {type(exc).__name__}") from exc
+        if resp.status_code != 200:
+            raise EcoleDirecteApiError(f"POST {path} : HTTP {resp.status_code}")
+        try:
+            payload = resp.json()
+        except ValueError as exc:
+            raise EcoleDirecteApiError(f"POST {path} : réponse non JSON") from exc
+        if not isinstance(payload, dict):
+            raise EcoleDirecteApiError(f"POST {path} : enveloppe inattendue")
+        return payload
