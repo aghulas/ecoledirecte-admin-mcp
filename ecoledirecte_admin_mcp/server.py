@@ -8,7 +8,11 @@ Charlemagne, référentiels (connecteurs, activités, sanctions, tags CDT...).
 
 N'expose PAS : factures, notes, messages (absents de l'API admin), ni aucun
 endpoint renvoyant identifiants/mots de passe d'utilisateurs ou ouvrant une
-supervision (bloqués dans client.py). Aucun outil d'écriture.
+supervision (bloqués dans client.py).
+
+EXCEPTION UNIQUE (16/09/2026) : `ed_admin_parametre_set` peut écrire UN
+paramètre établissement (voir sa docstring et client.py::set_parametre). Tous
+les autres outils restent strictement lecture seule.
 """
 from __future__ import annotations
 
@@ -173,6 +177,29 @@ async def ed_admin_referentiels_get() -> Any:
         "portesMonnaieCommun": await c.list_portes_monnaie("commun"),
         "lsuCompetencesNumeriques": await c.list_lsu_competences_numeriques(),
     }
+
+
+@mcp.tool()
+async def ed_admin_parametre_set(libelle: str, valeur: str, confirm: bool = False) -> Any:
+    """ÉCRITURE — modifie UN paramètre établissement. C'est le SEUL outil
+    d'écriture de tout ce connecteur ; tous les autres restent lecture seule.
+
+    Sans confirm=True (par défaut) : n'écrit RIEN, renvoie un aperçu (valeur
+    actuelle vs proposée) pour relecture. Il faut rappeler explicitement avec
+    confirm=True pour appliquer le changement pour de vrai — et il faut TOUJOURS
+    obtenir l'accord explicite de l'utilisateur en conversation avant de faire
+    cet appel avec confirm=True, quel que soit le contexte.
+
+    Refusé d'office pour tout paramètre ressemblant à un secret (clé, mot de
+    passe, certificat, IBAN...) ou faisant partie de la liste que l'admin
+    EcoleDirecte exclut lui-même de l'édition générique (règlements en ligne,
+    connecteurs partenaires, délais réglementaires notes/LSU...).
+
+    `libelle` = identifiant exact du paramètre (ex. 'Sites/Familles/Actif',
+    trouvable via ed_admin_parametres_get). `valeur` = nouvelle valeur en
+    chaîne — les booléens s'écrivent '1'/'0', comme le fait l'interface admin
+    elle-même."""
+    return await _get_client().set_parametre(libelle, valeur, confirm)
 
 
 @mcp.tool()
