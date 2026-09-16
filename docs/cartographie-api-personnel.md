@@ -15,8 +15,12 @@ donc rien marqué « lu »).
 | Chemin | `<action>.awp` | `<type>/<id>/<action>.awp` (ex. `personnels/18/…`) ou global |
 | Contenu | annuaire + paramétrages | messagerie, agenda, RDV, documents, consultation élèves |
 
-Point clé : la **consultation des élèves** (`classes/{id}/eleves`) donne les
-coordonnées (parents, contacts) que l'API admin n'exposait pas.
+Point clé : la **consultation des élèves** (`classes/{id}/eleves`) donne la fiche
+élève que l'API admin n'exposait pas. ⚠️ Vérifié le 16/09/2026 : les
+**responsables n'y ont AUCUNE coordonnée** (civilité, nom, prénom, rôle, id
+seulement). Seuls `email`/`portable` **de l'élève** sont présents. Pour les
+coordonnées des parents, il faut chercher ailleurs (fiche élève détaillée à
+cartographier, ou Charlemagne).
 
 ## 2. Protocole (identique à l'admin, autre hôte)
 
@@ -55,7 +59,7 @@ Tous sur `apip.ecoledirecte.com/v3/`. `{id}` = 18, `{cls}` = idClasse.
 | `A/{id}/postits.awp?administrable=o` | post-it / tableau d'affichage | Post-it |
 | `A/{id}/espacestravail.awp?typeModule=espaceTravail` | espaces ENT (vide) | — |
 | `niveauxListe.awp` | référentiel niveaux | Consultation |
-| `classes/{cls}/eleves.awp` | **élèves d'une classe + coordonnées** | Consultation |
+| `classes/{cls}/eleves.awp` | `{entity, eleves[]}` — champs élève : `id, nom, prenom, sexe, dateNaissance, email, portable, regime, numeroBadge, dateEntree, dateSortie, dispense, dispositifs, photo, classeId, classeLibelle, responsables[{id, civilite, nom, prenom, role}]` (30 élèves sur la classe testée) | Consultation |
 | `utilisateurs/professeurs.awp` | annuaire enseignants | Consultation |
 | `salles.awp` | salles (vide) | Consultation |
 
@@ -69,8 +73,19 @@ comptes enseignant/famille) ni le conseil de classe rempli.
 - Toute connexion mobilise le compte réel d'une personne (ici le secrétariat) :
   la « date de dernière connexion » et les stats bougent.
 
-## 6. Décision de périmètre en attente
+## 6. Décisions prises (16/09/2026)
 
-Implémenter côté MCP suppose de stocker le **mot de passe d'un compte personnel
-d'un collègue** (secrétariat) — différent de l'admin, qui est le compte de [prénom].
-À trancher avec [prénom] avant tout code (voir conversation).
+- Compte utilisé : **secrétariat** (COUTOULY, id 18), avec accord, **en attendant
+  un compte dédié à [prénom]** en cours de création dans Charlemagne. Bascule = un
+  simple `login` avec l'autre identifiant.
+- Périmètre : **tout en lecture** ; jamais d'ouverture de message individuel.
+- Double authentification : **non demandée** par l'établissement pour ce compte
+  (paramètres 2FA à 0) — le login headless fonctionne sans cn/cv.
+- Redaction par défaut sur les fiches élèves : `dateNaissance`, `numeroBadge`,
+  `photo` (surchargeable avec `include_sensitive_fields=True`).
+
+## 7. À cartographier ensuite
+
+Les **coordonnées des responsables** ne sont pas sur `classes/{id}/eleves`. Piste :
+la fiche détaillée d'un élève dans la vue Consultation (cliquer un élève déclenche
+probablement un endpoint `eleves/{id}/...`), à capturer si le besoin se confirme.
