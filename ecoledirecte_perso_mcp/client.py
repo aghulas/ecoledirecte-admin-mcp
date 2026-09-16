@@ -187,6 +187,38 @@ class EcoleDirectePersoClient:
             if isinstance(e, dict) else e for e in eleves
         ]}
 
+    async def eleve_coordonnees_famille(self, id_eleve: str, include_sensitive_fields: bool = False) -> Any:
+        """Coordonnées des responsables familiaux d'un élève. Schéma réel (16/09/2026) :
+        liste de {adresseLigne1, adresseLigne2, adresseLigne3, codePostal, ville, typeLien,
+        typeLienLibelle, responsable{civilite, nom, nomSimple, prenom, codePays, telDomicile,
+        telTravail, telMobile, mailTravail, mailPerso, profession, societe, csp{code,libelle}},
+        conjoint{...même forme, si applicable...}}.
+        `profession`/`societe`/`csp` retirés par défaut (hors périmètre "coordonnées")."""
+        data = await self.get(f"eleves/{id_eleve}/coordonneesfamille")
+        if include_sensitive_fields:
+            return data
+        if not isinstance(data, list):
+            raise EcoleDirectePersoApiError(
+                "eleves/{id}/coordonneesfamille : format inattendu — refus de renvoyer "
+                "un résultat potentiellement non rédacté."
+            )
+        def _redact_person(p: Any) -> Any:
+            if not isinstance(p, dict):
+                return p
+            return {k: v for k, v in p.items() if k not in SETTINGS.sensitive_famille_fields}
+        out = []
+        for entry in data:
+            if not isinstance(entry, dict):
+                out.append(entry)
+                continue
+            new_entry = dict(entry)
+            if "responsable" in new_entry:
+                new_entry["responsable"] = _redact_person(new_entry["responsable"])
+            if "conjoint" in new_entry:
+                new_entry["conjoint"] = _redact_person(new_entry["conjoint"])
+            out.append(new_entry)
+        return out
+
     async def professeurs(self) -> Any:
         return await self.get("utilisateurs/professeurs")
 

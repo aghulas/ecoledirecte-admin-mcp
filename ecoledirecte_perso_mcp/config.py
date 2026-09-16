@@ -41,5 +41,10 @@ class Settings:
     # mails de parents côté serveur admin.
     sensitive_eleve_fields: tuple[str, ...] = ("dateNaissance", "numeroBadge", "photo")
 
+    # Champs retirés par défaut de eleves/{id}/coordonneesfamille (schéma réel
+    # confirmé 16/09/2026) : catégorie socio-professionnelle et employeur, hors
+    # périmètre "coordonnées" (adresse/téléphones/emails, eux conservés).
+    sensitive_famille_fields: tuple[str, ...] = ("profession", "societe", "csp")
+
 
 SETTINGS = Settings()
