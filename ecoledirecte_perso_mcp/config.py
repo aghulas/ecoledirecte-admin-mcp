@@ -35,5 +35,11 @@ class Settings:
     identifiant: str | None = os.environ.get("ED_PERSO_IDENTIFIANT")
     keychain_service: str = os.environ.get("ED_PERSO_KEYCHAIN_SERVICE", "ecoledirecte-perso-mcp")
 
+    # Champs retirés par défaut des fiches élèves (schéma réel confirmé 16/09/2026) :
+    # date de naissance et n° de badge (identifiant physique) ; `photo` = chemin interne.
+    # `email`/`portable` de l'élève sont CONSERVÉS (utiles pour contacter), comme les
+    # mails de parents côté serveur admin.
+    sensitive_eleve_fields: tuple[str, ...] = ("dateNaissance", "numeroBadge", "photo")
+
 
 SETTINGS = Settings()

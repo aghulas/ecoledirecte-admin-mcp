@@ -164,3 +164,41 @@ async def test_tool_messages_list_validates_boite(tmp_path, monkeypatch):
 def ToolError_or_value_error():
     from mcp.server.mcpserver.exceptions import ToolError
     return ToolError
+
+
+# ---- redaction des fiches élèves ----
+ELEVE = {"id": 1, "nom": "X", "prenom": "Y", "email": "y@x.fr", "portable": "0600",
+         "dateNaissance": "01/01/2015", "numeroBadge": "999", "photo": "/p.jpg",
+         "responsables": [{"id": 5, "civilite": "Mme", "nom": "X", "prenom": "Z", "role": "MERE"}]}
+
+
+@respx.mock
+async def test_classe_eleves_redacts_by_default(tmp_path):
+    respx.post(url__startswith=f"{DATA}/classes/8/eleves.awp").mock(
+        return_value=ok({"entity": {"id": 8}, "eleves": [ELEVE]})
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    e = (await client.classe_eleves("8"))["eleves"][0]
+    assert "dateNaissance" not in e and "numeroBadge" not in e and "photo" not in e
+    assert e["email"] == "y@x.fr"          # coordonnées élève conservées
+    assert e["responsables"][0]["role"] == "MERE"
+
+
+@respx.mock
+async def test_classe_eleves_full_on_demand(tmp_path):
+    respx.post(url__startswith=f"{DATA}/classes/8/eleves.awp").mock(
+        return_value=ok({"entity": {"id": 8}, "eleves": [ELEVE]})
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    e = (await client.classe_eleves("8", include_sensitive_fields=True))["eleves"][0]
+    assert e["dateNaissance"] == "01/01/2015"
+
+
+@respx.mock
+async def test_classe_eleves_unexpected_shape_refused(tmp_path):
+    respx.post(url__startswith=f"{DATA}/classes/8/eleves.awp").mock(
+        return_value=ok({"entity": {}, "eleves": "pas une liste"})
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    with pytest.raises(Exception, match="format inattendu"):
+        await client.classe_eleves("8")

@@ -167,8 +167,25 @@ class EcoleDirectePersoClient:
     async def niveaux(self) -> Any:
         return await self.get("niveauxListe")
 
-    async def classe_eleves(self, id_classe: str) -> Any:
-        return await self.get(f"classes/{id_classe}/eleves")
+    async def classe_eleves(self, id_classe: str, include_sensitive_fields: bool = False) -> Any:
+        """Élèves d'une classe. Schéma réel (16/09/2026) : {entity:{...}, eleves:[{
+        id, nom, prenom, sexe, dateNaissance, email, portable, regime, numeroBadge,
+        dateEntree, dateSortie, dispense, dispositifs, photo, classeId, classeLibelle,
+        responsables:[{id, civilite, nom, prenom, role}]}]}.
+        ATTENTION : les responsables n'ont PAS de coordonnées ici (ni mail ni tél)."""
+        data = await self.get(f"classes/{id_classe}/eleves")
+        if include_sensitive_fields or not isinstance(data, dict):
+            return data
+        eleves = data.get("eleves")
+        if not isinstance(eleves, list):
+            raise EcoleDirectePersoApiError(
+                "classes/{id}/eleves : format inattendu — refus de renvoyer un "
+                "résultat potentiellement non redacté."
+            )
+        return {**data, "eleves": [
+            {k: v for k, v in e.items() if k not in SETTINGS.sensitive_eleve_fields}
+            if isinstance(e, dict) else e for e in eleves
+        ]}
 
     async def professeurs(self) -> Any:
         return await self.get("utilisateurs/professeurs")
