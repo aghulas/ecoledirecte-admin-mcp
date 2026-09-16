@@ -1,0 +1,30 @@
+[project]
+name = "ecoledirecte-admin-mcp"
+version = "0.2.0"
+description = "Serveur MCP en lecture seule vers la console admin.ecoledirecte.com (API v3/admin non documentée)"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=2.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+]
+
+[project.scripts]
+ecoledirecte-admin-mcp = "ecoledirecte_admin_mcp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["ecoledirecte_admin_mcp*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
