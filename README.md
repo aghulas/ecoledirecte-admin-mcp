@@ -1,9 +1,22 @@
-# ecoledirecte-admin-mcp (prototype)
+# ecoledirecte-mcp (prototype)
 
-Serveur MCP **en lecture seule** vers la console admin EcoleDirecte
-(admin.ecoledirecte.com) de l'école l'établissement, [ville]. Basé sur l'API
-interne `api.ecoledirecte.com/v3/admin/`, non documentée — voir
-[`docs/cartographie-api-admin.md`](docs/cartographie-api-admin.md).
+Deux serveurs MCP **en lecture seule** vers EcoleDirecte (école l'établissement,
+[ville]), APIs internes non documentées :
+
+- **`ecoledirecte-admin`** — console admin (`admin.ecoledirecte.com`) :
+  annuaire des comptes, classes, paramétrages, stats, synchros Charlemagne.
+  Voir [`docs/cartographie-api-admin.md`](docs/cartographie-api-admin.md).
+- **`ecoledirecte-perso`** — espace personnel (`www.ecoledirecte.com`) d'un compte
+  secrétariat : consultation des élèves par classe, coordonnées détaillées des
+  responsables (adresse/téléphones/emails), messagerie (liste seule), agenda, RDV,
+  documents, post-it. Voir
+  [`docs/cartographie-api-personnel.md`](docs/cartographie-api-personnel.md).
+
+---
+
+## Serveur admin
+
+Basé sur l'API interne `api.ecoledirecte.com/v3/admin/`.
 
 **Périmètre réel** : annuaire des comptes (familles↔enfants↔classe, élèves,
 profs, personnels), classes, paramétrages, statistiques de connexion, état des
@@ -73,4 +86,66 @@ Une seule fois, dans le Terminal :
 
 ```bash
 ./.venv/bin/pytest
+```
+
+---
+
+## Serveur espace personnel (`ecoledirecte-perso`)
+
+Compte **personnel/secrétariat** de l'école, avec **l'accord de la personne**.
+API `apip.ecoledirecte.com/v3/` (site www.ecoledirecte.com).
+
+### Connexion (login interactif, une fois)
+
+La double authentification EcoleDirecte pose une **question secrète** : impossible
+à résoudre par un serveur sans intervention. On la fait une fois en interactif, les
+jetons `cn`/`cv` sont mémorisés, puis le serveur se reconnecte seul.
+
+```bash
+cd ~/dev/ecoledirecte-admin-mcp
+./.venv/bin/python -m ecoledirecte_perso_mcp.auth login
+```
+
+- Demande l'identifiant, puis le mot de passe (Trousseau, saisie masquée), puis
+  la question de sécurité si EcoleDirecte la pose (réponds au numéro proposé).
+- Mot de passe : Trousseau macOS, service `ecoledirecte-perso-mcp`.
+- Jetons + `cn`/`cv` : `~/.ecoledirecte-perso-mcp/session.json` (600).
+- Pour basculer sur un autre compte (ex. compte dédié une fois créé) : relancer
+  `auth login` avec le nouvel identifiant, rien d'autre à changer.
+
+### Précautions importantes
+
+- **Compte d'un tiers** : n'utiliser qu'avec l'accord explicite de la personne.
+- **Jeton tournant** : si cette personne (ou toi) est connectée sur EcoleDirecte
+  dans un navigateur au même moment, les jetons se cassent mutuellement. Éviter
+  l'usage simultané.
+- **Aucune ouverture de message** : les outils listent la messagerie mais
+  n'ouvrent jamais un message (ce qui le marquerait « lu » chez le destinataire) —
+  bloqué dans `client.py`, testé.
+- **`ed_perso_eleve_coordonnees_famille`** renvoie des données personnelles
+  directement identifiantes sur des tiers (adresse/téléphone/email de parents) :
+  à réserver à un besoin de contact légitime, jamais à de la collecte systématique.
+
+### Outils (`ecoledirecte-perso`)
+
+| Outil | Rôle |
+|---|---|
+| `ed_perso_session_info` | compte connecté, double auth mémorisée ? |
+| `ed_perso_classe_eleves(id_classe)` | élèves d'une classe (identité, régime, responsables **sans** coordonnées à ce niveau) |
+| `ed_perso_eleve_coordonnees_famille(id_eleve)` | **coordonnées des responsables** d'un élève : adresse, téléphones, emails |
+| `ed_perso_niveaux_list` | référentiel niveaux/classes |
+| `ed_perso_professeurs_list` | annuaire enseignants |
+| `ed_perso_messages_list(boite)` | messagerie en liste (received/sent/archived) |
+| `ed_perso_agenda` | événements agenda |
+| `ed_perso_carnet_liaison_non_lus` | compteurs non lus du cahier de liaison |
+| `ed_perso_rendez_vous` | sessions et RDV individuels |
+| `ed_perso_documents(archive?)` | documents de l'établissement |
+| `ed_perso_postits` | post-it / tableau d'affichage |
+
+### Claude Desktop
+
+```json
+"ecoledirecte-perso": {
+  "command": "/Users/remi/dev/ecoledirecte-admin-mcp/.venv/bin/ecoledirecte-perso-mcp"
+}
 ```
