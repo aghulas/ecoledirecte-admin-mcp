@@ -88,10 +88,56 @@ Confirmés en lecture sur données réelles (✅) ou vus seulement dans le code 
 
 ## 6. Pistes pour étendre (notes, messagerie, factures)
 
-1. **Compte personnel sur www.ecoledirecte.com** (profil `A`/personnel) : l'API
-   « classique » `v3/...` documentée par la communauté (EduWireApps/ecoledirecte-api-docs)
-   — à cartographier avec un vrai compte personnel de l'école.
+1. **Compte personnel sur www.ecoledirecte.com** (profil `A`/personnel) : fait,
+   voir cartographie-api-personnel.md et le serveur `ecoledirecte-perso`.
 2. **Supervision** : techniquement possible (session ouverte en tant que famille)
    mais accès tracé, et lire un message peut le marquer « lu » chez la famille.
-   Écartée pour l'instant.
+   Écartée définitivement.
 3. **Factures** : la base Charlemagne consolidée existante reste la bonne source.
+
+## 7. Écriture — exception unique : `set_parametre` (16/09/2026)
+
+À la demande explicite de [prénom], une SEULE capacité d'écriture a été ajoutée,
+après cartographie statique du front (lecture du bundle JS admin, aucun appel
+d'écriture réel déclenché avant l'implémentation) :
+
+- Service Angular du front : `ParametresService` (module `edadminApp.Parametres`).
+  - `getValueParam(tabParametres)` → `GET parametres` avec `data={parametres:[{libelle}]}`
+    (= ce que fait déjà `get_parametres`).
+  - `saveParams(tabParametres)` → **`POST parametres`** avec `data={parametres:[...]}`
+    — **le tableau complet des entrées concernées**, avec le champ `valeur` modifié
+    sur l'entrée ciblée. Pas d'endpoint dédié par paramètre : on relit l'entrée
+    complète, on modifie `valeur`, on repost l'entrée telle quelle.
+  - `enregistrerParametres(tabParametresForWebDev, tabParametres)` : fait ce
+    rapprochement lecture→mutation→saveParams côté front ; on reproduit la même
+    logique côté connecteur dans `EcoleDirecteAdminClient.set_parametre`.
+  - `listeParametres` exclut elle-même de l'édition générique une liste de
+    paramètres sensibles (réglements en ligne/banque, TPE, clés API de
+    connecteurs partenaires — CATER, Esidoc, PearlTrees, EduMalin, Tabuleo —,
+    délais réglementaires Notes/Moyennes/Appréciations/LSUN, validité mot de
+    passe, nb de post-it/agenda, version API messagerie, droits ENT). Reprise à
+    l'identique côté connecteur (`_FRONT_EXCLUDED_PARAM_MARKERS`), en plus du
+    filtre `is_secret_param` déjà existant pour la lecture.
+
+- Design du connecteur (`ed_admin_parametre_set(libelle, valeur, confirm=False)`) :
+  - Refuse d'office (avant tout appel réseau d'écriture) les paramètres secrets
+    ou exclus par le front lui-même.
+  - Sans `confirm=True` : lecture seule, renvoie juste un aperçu (valeur actuelle
+    vs proposée) — **rien n'est écrit**.
+  - Avec `confirm=True` : écrit (`verbe=post`), puis **relit immédiatement** le
+    paramètre pour confirmer que la valeur a bien changé (champ `coherent`).
+  - C'est la SEULE méthode d'écriture de tout le client ; elle ne passe jamais
+    par `check_allowed` (qui continue de bloquer tout non-GET pour toutes les
+    autres méthodes).
+  - Claude doit toujours redemander l'accord explicite de [prénom] en conversation
+    avant tout appel réel avec `confirm=True`, quel que soit le contexte —
+    règle de fonctionnement, pas seulement garde-fou logiciel.
+
+- Pas d'environnement de test/staging utilisé (décision explicite de [prénom]) :
+  premiers essais réels à faire directement sur l'établissement, sur un
+  paramètre à faible impact et facilement réversible, avec relecture immédiate.
+
+- 12 tests dédiés (respx, aucun réseau réel) : détection secrets/exclusions,
+  aperçu sans écriture, forme exacte de l'écriture (verbe=post, jeton, corps),
+  relecture de confirmation, code d'erreur d'écriture, garde-fou "pas d'autre
+  méthode d'écriture" mis à jour pour n'autoriser que `set_parametre`.

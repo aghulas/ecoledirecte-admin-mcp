@@ -55,8 +55,15 @@ async def test_forbidden_endpoint_never_hits_network(tmp_path):
 
 
 def test_client_exposes_no_write_helpers():
+    # Exception unique et explicite (16/09/2026) : set_parametre, la SEULE méthode
+    # d'écriture du client — voir sa propre garde-fous dans test_write_parametre.py
+    # (secrets/exclusions front refusés d'office, aperçu sans confirm=True). Toute
+    # AUTRE méthode qui apparaîtrait ici ferait échouer ce test, comme avant.
+    allowed_write_methods = {"set_parametre"}
     public = [n for n in dir(EcoleDirecteAdminClient) if not n.startswith("_")]
     for name in public:
+        if name in allowed_write_methods:
+            continue
         assert not name.startswith(("post", "put", "delete", "update", "create", "set", "reinit")), name
 
 
