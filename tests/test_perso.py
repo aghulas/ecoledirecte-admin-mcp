@@ -202,3 +202,54 @@ async def test_classe_eleves_unexpected_shape_refused(tmp_path):
     client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
     with pytest.raises(Exception, match="format inattendu"):
         await client.classe_eleves("8")
+
+
+# ---- coordonnées des responsables (eleves/{id}/coordonneesfamille) ----
+FAMILLE = [{
+    "adresseLigne1": "1 rue Test", "adresseLigne2": "", "adresseLigne3": "",
+    "codePostal": "00000", "ville": "[VILLE]", "typeLien": 1, "typeLienLibelle": "Père",
+    "responsable": {"civilite": "M.", "nom": "X", "nomSimple": "X", "prenom": "Y",
+                    "telDomicile": "0100000000", "telTravail": "0200000000",
+                    "telMobile": "0600000000", "mailTravail": "y@work.fr",
+                    "mailPerso": "y@perso.fr", "profession": "Cadre",
+                    "societe": "Acme", "csp": {"code": "3", "libelle": "Cadres"}},
+    "conjoint": {"civilite": "Mme", "nom": "X", "nomSimple": "X", "prenom": "Z",
+                "telMobile": "0700000000", "mailPerso": "z@perso.fr",
+                "profession": "Infirmière", "societe": "Hopital", "csp": {"code": "4", "libelle": "..."}},
+}]
+
+
+@respx.mock
+async def test_coordonnees_famille_redacts_by_default(tmp_path):
+    respx.post(url__startswith=f"{DATA}/eleves/881/coordonneesfamille.awp").mock(
+        return_value=ok(FAMILLE)
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    out = await client.eleve_coordonnees_famille("881")
+    resp = out[0]["responsable"]
+    conj = out[0]["conjoint"]
+    for d in (resp, conj):
+        assert "profession" not in d and "societe" not in d and "csp" not in d
+    # coordonnées elles-mêmes conservées
+    assert resp["mailPerso"] == "y@perso.fr" and resp["telMobile"] == "0600000000"
+    assert out[0]["ville"] == "[VILLE]"
+
+
+@respx.mock
+async def test_coordonnees_famille_full_on_demand(tmp_path):
+    respx.post(url__startswith=f"{DATA}/eleves/881/coordonneesfamille.awp").mock(
+        return_value=ok(FAMILLE)
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    out = await client.eleve_coordonnees_famille("881", include_sensitive_fields=True)
+    assert out[0]["responsable"]["profession"] == "Cadre"
+
+
+@respx.mock
+async def test_coordonnees_famille_unexpected_shape_refused(tmp_path):
+    respx.post(url__startswith=f"{DATA}/eleves/881/coordonneesfamille.awp").mock(
+        return_value=ok({"pas": "une liste"})
+    )
+    client = EcoleDirectePersoClient(auth=make_auth(tmp_path))
+    with pytest.raises(Exception, match="format inattendu"):
+        await client.eleve_coordonnees_famille("881")

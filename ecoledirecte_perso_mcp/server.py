@@ -2,9 +2,11 @@
 
 Complète le serveur admin : ici on lit ce que voit un compte personnel sur
 www.ecoledirecte.com — messagerie (liste seule), agenda, rendez-vous, cahier de
-liaison, documents, post-it, et la CONSULTATION des élèves par classe (fiches
-élèves : email/portable de l'élève, régime, dispositifs, responsables SANS
-coordonnées — données absentes de l'API admin). Voir
+liaison, documents, post-it, la CONSULTATION des élèves par classe (fiches
+élèves : email/portable de l'élève, régime, dispositifs, responsables sans
+coordonnées à ce niveau), et les coordonnées détaillées d'un élève
+(ed_perso_eleve_coordonnees_famille : adresse/téléphones/emails des
+responsables — données absentes de l'API admin). Voir
 docs/cartographie-api-personnel.md.
 
 Aucune écriture. Aucun outil n'ouvre un message individuel (cela le marquerait
@@ -67,6 +69,22 @@ async def ed_perso_niveaux_list() -> Any:
     """Référentiel des niveaux/classes visibles par le compte (pour retrouver les
     identifiants de classe à passer à ed_perso_classe_eleves)."""
     return await _get_client().niveaux()
+
+
+@mcp.tool()
+async def ed_perso_eleve_coordonnees_famille(id_eleve: str, include_sensitive_fields: bool = False) -> Any:
+    """Coordonnées des responsables familiaux d'un élève : adresse postale, téléphones
+    (domicile/travail/mobile) et emails (perso/travail) de chaque responsable, et de son
+    conjoint le cas échéant. `id_eleve` = identifiant interne de l'élève (le champ `id`
+    renvoyé par ed_perso_classe_eleves).
+
+    ⚠️ Données personnelles directement identifiantes sur des tiers (parents/responsables) —
+    à utiliser uniquement pour un besoin de contact légitime (ex. activation de compte,
+    urgence), pas pour de la collecte systématique.
+    `profession`, `societe` et la catégorie socio-professionnelle (`csp`) sont retirés
+    par défaut (hors périmètre "coordonnées"), surchargeable avec
+    include_sensitive_fields=True."""
+    return await _get_client().eleve_coordonnees_famille(id_eleve, include_sensitive_fields)
 
 
 @mcp.tool()
