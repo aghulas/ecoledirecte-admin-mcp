@@ -1,0 +1,587 @@
+swagger: "2.0"
+info:
+  title: EcoleDirecte Wrapper API
+  description: >-
+    API REST "wrapper" pour l'établissement l'établissement ([ville]),
+    destinée à servir de connecteur personnalisé / action pour Microsoft 365
+    Copilot (Copilot Studio).
+
+    IMPORTANT — cette API NE DOIT PAS être remplacée par un appel direct à
+    l'API interne d'EcoleDirecte (api.ecoledirecte.com). Elle réimplémente,
+    côté serveur, exactement les mêmes garde-fous que le connecteur MCP
+    existant (ecoledirecte-admin / ecoledirecte-perso) : lecture seule sauf
+    l'unique action d'écriture explicitement marquée, endpoints sensibles
+    bloqués, champs (badge, photo, coordonnées bancaires...) masqués par
+    défaut, valeurs ressemblant à des secrets masquées. Un backend qui
+    exposerait tel quel l'API EcoleDirecte perdrait toutes ces protections.
+
+    Statut (19/09/2026) : spécification de contrat pour la Phase 1 du plan
+    d'intégration Copilot 365 (voir le projet Claude "ecoledirect", doc
+    integration-copilot365-mcp.md). Le backend qui implémente ce contrat
+    n'est pas encore développé — ce fichier sert de base pour le développer
+    puis pour créer le connecteur personnalisé dans Copilot Studio.
+
+    Note format : Power Platform / Copilot Studio exige aujourd'hui un import
+    au format OpenAPI 2.0 (Swagger) pour les connecteurs personnalisés — un
+    support natif OpenAPI 3.0 est annoncé (release wave 2025 wave 2) mais pas
+    encore la voie standard documentée ; ce fichier est donc volontairement
+    en 2.0 pour être importable directement.
+  version: "0.1.0"
+host: TODO-nom-app.azurewebsites.net
+basePath: /
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-API-Key
+    description: >-
+      Phase 1 (mono-utilisateur, [prénom] uniquement) : clé API simple. Phase 2 du
+      plan d'intégration : remplacement par OAuth 2.0 / Entra ID pour
+      identifier chaque utilisateur individuellement — voir
+      integration-copilot365-mcp.md.
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: admin
+    description: Console admin EcoleDirecte (admin.ecoledirecte.com) — annuaire, paramétrages, stats.
+  - name: perso
+    description: Espace personnel EcoleDirecte (www.ecoledirecte.com) — consultation élèves/familles, messagerie, agenda.
+
+paths:
+
+  /admin/session:
+    get:
+      operationId: AdminSessionInfo
+      tags: [admin]
+      summary: Compte admin connecté
+      x-ms-summary: Compte admin connecté
+      description: >-
+        Établissement(s) (RNE/UAI, libellé), année scolaire en cours, mode
+        restreint. Utile pour vérifier la connexion.
+      responses:
+        "200":
+          description: Informations de session
+          schema:
+            type: object
+            properties:
+              codeOgec: { type: string }
+              type: { type: string }
+              etablissements: { type: array, items: { type: object } }
+              parametragesRNE: { type: object }
+              isModeRestreint: { type: boolean }
+              parametrageMultiEtab: { type: boolean }
+
+  /admin/classes:
+    get:
+      operationId: AdminClassesList
+      tags: [admin]
+      summary: Structure des classes
+      x-ms-summary: Structure des classes
+      description: >-
+        Établissement → niveaux → classes {id, code, libelle}. Les `id` de
+        classe correspondent au champ `idClasse` des élèves/enfants.
+      responses:
+        "200":
+          description: Arborescence des classes
+          schema: { type: object }
+
+  /admin/familles:
+    get:
+      operationId: AdminFamillesSearch
+      tags: [admin]
+      summary: Recherche de comptes famille
+      x-ms-summary: Recherche de comptes famille
+      description: >-
+        Recherche des comptes famille (responsables et conjoints) par nom —
+        au moins 2 caractères, correspondance partielle. Pas d'email /
+        téléphone / adresse (non exposés par l'API admin ; voir
+        /perso/eleves/{id_eleve}/coordonnees-famille pour ça).
+      parameters:
+        - name: nom
+          in: query
+          type: string
+          required: true
+          minLength: 2
+          description: Au moins 2 caractères du nom recherché.
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+          description: true pour inclure badge/photo (masqués par défaut).
+      responses:
+        "200":
+          description: Liste des comptes famille correspondants
+          schema: { type: array, items: { type: object } }
+
+  /admin/eleves:
+    get:
+      operationId: AdminElevesSearch
+      tags: [admin]
+      summary: Recherche de comptes élèves
+      x-ms-summary: Recherche de comptes élèves
+      description: Recherche des comptes élèves par nom (≥ 2 caractères).
+      parameters:
+        - name: nom
+          in: query
+          type: string
+          required: true
+          minLength: 2
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Liste des élèves correspondants
+          schema: { type: array, items: { type: object } }
+
+  /admin/professeurs:
+    get:
+      operationId: AdminProfesseursList
+      tags: [admin]
+      summary: Liste des comptes professeurs
+      x-ms-summary: Liste des comptes professeurs
+      parameters:
+        - name: filtre
+          in: query
+          type: string
+          required: false
+          description: Filtre optionnel sur le nom.
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Liste des professeurs
+          schema: { type: array, items: { type: object } }
+
+  /admin/personnels:
+    get:
+      operationId: AdminPersonnelsList
+      tags: [admin]
+      summary: Liste des comptes personnels
+      x-ms-summary: Liste des comptes personnels
+      description: Personnels administratif / vie scolaire, filtre optionnel.
+      parameters:
+        - name: filtre
+          in: query
+          type: string
+          required: false
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Liste des personnels
+          schema: { type: array, items: { type: object } }
+
+  /admin/entreprises:
+    get:
+      operationId: AdminEntreprisesSearch
+      tags: [admin]
+      summary: Recherche de comptes entreprises / tuteurs de stage
+      x-ms-summary: Recherche entreprises / tuteurs de stage
+      parameters:
+        - name: nom
+          in: query
+          type: string
+          required: true
+          minLength: 2
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Liste des entreprises correspondantes
+          schema: { type: array, items: { type: object } }
+
+  /admin/parametres:
+    get:
+      operationId: AdminParametresGet
+      tags: [admin]
+      summary: Valeurs de paramètres établissement
+      x-ms-summary: Lire des paramètres établissement
+      description: >-
+        Valeurs de paramètres par libellé exact, ex.
+        'Sites/Familles/Notes/Etablissement_0/Notes/Actif',
+        'Sites/Admin/3DSecure/Actif'. Les paramètres ressemblant à des
+        secrets (clés, certificats, mots de passe, IBAN...) sont masqués.
+      parameters:
+        - name: libelles
+          in: query
+          type: array
+          items: { type: string }
+          collectionFormat: multi
+          required: true
+          description: Un ou plusieurs libellés exacts de paramètre.
+      responses:
+        "200":
+          description: Paramètres et leurs valeurs
+          schema:
+            type: array
+            items:
+              type: object
+              properties:
+                libelle: { type: string }
+                valeur: { type: string }
+
+  /admin/parametre:
+    post:
+      operationId: AdminParametreSet
+      tags: [admin]
+      summary: "ÉCRITURE — modifie un paramètre établissement"
+      x-ms-summary: "ÉCRITURE : modifier un paramètre établissement"
+      description: >-
+        SEULE action d'écriture de toute cette API ; tout le reste est
+        strictement lecture seule. Sans confirm=true (par défaut) : n'écrit
+        RIEN, renvoie un aperçu (valeur actuelle vs proposée). Il faut
+        rappeler explicitement avec confirm=true pour appliquer le
+        changement pour de vrai. Refusé d'office pour tout paramètre
+        ressemblant à un secret ou faisant partie de la liste exclue de
+        l'édition générique par l'admin EcoleDirecte lui-même (règlements en
+        ligne, connecteurs partenaires, délais réglementaires notes/LSU...).
+
+        Côté Copilot Studio : activer impérativement l'option "Demander une
+        confirmation avant l'exécution" sur cette action, pour qu'un humain
+        valide explicitement avant tout appel avec confirm=true — c'est la
+        même exigence que dans le connecteur MCP actuel (accord explicite en
+        conversation avant toute écriture réelle).
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: object
+            required: [libelle, valeur]
+            properties:
+              libelle:
+                type: string
+                description: >-
+                  Identifiant exact du paramètre (ex.
+                  'Sites/Familles/Actif'), trouvable via GET /admin/parametres.
+              valeur:
+                type: string
+                description: Nouvelle valeur ('0'/'1' pour un booléen, comme l'interface admin elle-même).
+              confirm:
+                type: boolean
+                default: false
+                description: false (défaut) = aperçu seul, rien n'est écrit. true = écriture réelle.
+      responses:
+        "200":
+          description: Aperçu (confirm=false) ou résultat de l'écriture (confirm=true)
+          schema:
+            type: object
+            properties:
+              libelle: { type: string }
+              valeur_actuelle: { type: string }
+              valeur_proposee: { type: string }
+              ecriture_effectuee: { type: boolean }
+              message: { type: string }
+
+  /admin/stats:
+    get:
+      operationId: AdminStatsConnexions
+      tags: [admin]
+      summary: Statistiques de connexion
+      x-ms-summary: Statistiques de connexion
+      description: Connexions par profil (Famille, Élève, Professeur, Personnel), par mois/jour/heure.
+      parameters:
+        - name: site
+          in: query
+          type: string
+          default: ecoledirecte
+      responses:
+        "200":
+          description: Statistiques de connexion
+          schema: { type: object }
+
+  /admin/synchros:
+    get:
+      operationId: AdminSynchrosEtat
+      tags: [admin]
+      summary: État des synchronisations Charlemagne
+      x-ms-summary: État des synchros Charlemagne
+      description: >-
+        État des derniers transferts Charlemagne → EcoleDirecte par module
+        (Vie scolaire, Notes, Administratif, Comptabilité, Passage, Entreprise).
+      responses:
+        "200":
+          description: État des synchronisations
+          schema: { type: object }
+
+  /admin/connecteurs:
+    get:
+      operationId: AdminConnecteursList
+      tags: [admin]
+      summary: Applications partenaires activées
+      x-ms-summary: Applications partenaires activées
+      description: "Connecteurs / « Mes Applis » : libellé, code, description, activation, données RGPD partagées."
+      parameters:
+        - name: actifs_seulement
+          in: query
+          type: boolean
+          default: true
+          description: Par défaut, uniquement les connecteurs activés pour l'établissement.
+      responses:
+        "200":
+          description: Liste des connecteurs
+          schema: { type: array, items: { type: object } }
+
+  /admin/activites:
+    get:
+      operationId: AdminActivitesList
+      tags: [admin]
+      summary: Activités de suivi paramétrées (cantine, étude...)
+      x-ms-summary: Activités de suivi (cantine, étude...)
+      parameters:
+        - name: type_user
+          in: query
+          type: string
+          default: familles
+      responses:
+        "200":
+          description: Activités paramétrées
+          schema: { type: object }
+
+  /admin/referentiels:
+    get:
+      operationId: AdminReferentielsGet
+      tags: [admin]
+      summary: Référentiels vie scolaire et pédagogie
+      x-ms-summary: Référentiels vie scolaire et pédagogie
+      description: >-
+        Types de sanction et catégories de suivi du carnet de
+        correspondance, tags du cahier de textes, salles, porte-monnaie
+        communs, classes LSU compétences numériques — en un seul appel.
+      responses:
+        "200":
+          description: Référentiels
+          schema:
+            type: object
+            properties:
+              typesSanction: { type: array, items: { type: object } }
+              categoriesSuivi: { type: array, items: { type: object } }
+              cahierDeTexteTags: { type: array, items: { type: object } }
+              salles: { type: array, items: { type: object } }
+              portesMonnaieCommun: { type: array, items: { type: object } }
+              lsuCompetencesNumeriques: { type: array, items: { type: object } }
+
+  /admin/activation-comptes:
+    get:
+      operationId: AdminActivationComptes
+      tags: [admin]
+      summary: Suivi de l'activation des comptes par classe
+      x-ms-summary: Suivi de l'activation des comptes
+      description: >-
+        Élèves dont aucun parent ne s'est connecté, responsables jamais
+        connectés, taux d'activation. `inclure_noms` ajoute les listes
+        nominatives (activé par défaut seulement si `classe` est précisé).
+      parameters:
+        - name: classe
+          in: query
+          type: string
+          required: false
+          description: Libellé ('CM2 B'...) ou idClasse ; vide = toutes les classes.
+        - name: inclure_noms
+          in: query
+          type: boolean
+          required: false
+      responses:
+        "200":
+          description: Suivi d'activation
+          schema: { type: object }
+
+  /perso/session:
+    get:
+      operationId: PersoSessionInfo
+      tags: [perso]
+      summary: Compte personnel connecté
+      x-ms-summary: Compte personnel connecté
+      responses:
+        "200":
+          description: Informations de session
+          schema: { type: object }
+
+  /perso/classes/{id_classe}/eleves:
+    get:
+      operationId: PersoClasseEleves
+      tags: [perso]
+      summary: Élèves d'une classe (fiche + email/portable élève)
+      x-ms-summary: Élèves d'une classe
+      description: >-
+        Nom, prénom, sexe, régime, dispositifs, email et portable DE
+        L'ÉLÈVE, et la liste des responsables (SANS coordonnées — voir
+        /perso/eleves/{id_eleve}/coordonnees-famille pour ça).
+        dateNaissance/numeroBadge/photo retirés sauf
+        include_sensitive_fields=true.
+      parameters:
+        - name: id_classe
+          in: path
+          type: string
+          required: true
+          description: Identifiant interne de la classe (même référentiel que côté admin).
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Élèves de la classe
+          schema: { type: array, items: { type: object } }
+
+  /perso/niveaux:
+    get:
+      operationId: PersoNiveauxList
+      tags: [perso]
+      summary: Référentiel des niveaux/classes
+      x-ms-summary: Référentiel des niveaux/classes
+      responses:
+        "200":
+          description: Niveaux et classes visibles par le compte
+          schema: { type: object }
+
+  /perso/eleves/{id_eleve}/coordonnees-famille:
+    get:
+      operationId: PersoEleveCoordonneesFamille
+      tags: [perso]
+      summary: "⚠️ Coordonnées des responsables familiaux d'un élève"
+      x-ms-summary: "⚠️ Coordonnées famille (PII tiers)"
+      description: >-
+        Adresse postale, téléphones et emails de chaque responsable (et
+        conjoint). DONNÉES PERSONNELLES DIRECTEMENT IDENTIFIANTES SUR DES
+        TIERS — à réserver à un besoin de contact légitime (ex. activation
+        de compte, urgence), jamais à de la collecte systématique.
+        profession/société/CSP retirés par défaut.
+      parameters:
+        - name: id_eleve
+          in: path
+          type: string
+          required: true
+          description: Identifiant interne de l'élève (champ `id` renvoyé par /perso/classes/{id_classe}/eleves).
+        - name: include_sensitive_fields
+          in: query
+          type: boolean
+          default: false
+      responses:
+        "200":
+          description: Coordonnées des responsables
+          schema: { type: array, items: { type: object } }
+
+  /perso/professeurs:
+    get:
+      operationId: PersoProfesseursList
+      tags: [perso]
+      summary: Annuaire des enseignants
+      x-ms-summary: Annuaire des enseignants
+      responses:
+        "200":
+          description: Liste des enseignants
+          schema: { type: array, items: { type: object } }
+
+  /perso/messages:
+    get:
+      operationId: PersoMessagesList
+      tags: [perso]
+      summary: Liste des messages (en-têtes uniquement)
+      x-ms-summary: Liste des messages (sans ouvrir)
+      description: >-
+        Liste seulement — n'ouvre JAMAIS un message (ce qui le marquerait
+        « lu » chez le destinataire). Renvoie les en-têtes (expéditeur,
+        sujet, date, lu/non lu), pas le corps.
+      parameters:
+        - name: boite
+          in: query
+          type: string
+          enum: [received, sent, archived]
+          default: received
+        - name: page
+          in: query
+          type: integer
+          default: 0
+        - name: items
+          in: query
+          type: integer
+          default: 100
+        - name: only_read
+          in: query
+          type: string
+          required: false
+      responses:
+        "200":
+          description: En-têtes de messages
+          schema: { type: object }
+
+  /perso/agenda:
+    get:
+      operationId: PersoAgenda
+      tags: [perso]
+      summary: Événements de l'agenda du compte
+      x-ms-summary: Événements de l'agenda
+      responses:
+        "200":
+          description: Événements agenda
+          schema: { type: array, items: { type: object } }
+
+  /perso/carnet-liaison/non-lus:
+    get:
+      operationId: PersoCarnetLiaisonNonLus
+      tags: [perso]
+      summary: Compteurs non lus du cahier de liaison
+      x-ms-summary: Cahier de liaison — non lus
+      description: Par classe, groupe et élève.
+      responses:
+        "200":
+          description: Compteurs non lus
+          schema: { type: object }
+
+  /perso/rendez-vous:
+    get:
+      operationId: PersoRendezVous
+      tags: [perso]
+      summary: Sessions de RDV et rendez-vous individuels
+      x-ms-summary: Rendez-vous
+      responses:
+        "200":
+          description: Sessions et rendez-vous individuels
+          schema:
+            type: object
+            properties:
+              sessions: { type: array, items: { type: object } }
+              individuels: { type: array, items: { type: object } }
+
+  /perso/documents:
+    get:
+      operationId: PersoDocuments
+      tags: [perso]
+      summary: Documents de l'établissement accessibles au compte
+      x-ms-summary: Documents de l'établissement
+      parameters:
+        - name: archive
+          in: query
+          type: string
+          required: false
+          description: Non vide pour inclure les archives.
+      responses:
+        "200":
+          description: Documents
+          schema: { type: array, items: { type: object } }
+
+  /perso/postits:
+    get:
+      operationId: PersoPostits
+      tags: [perso]
+      summary: Post-it / tableau d'affichage
+      x-ms-summary: Post-it / tableau d'affichage
+      responses:
+        "200":
+          description: Post-it
+          schema: { type: array, items: { type: object } }
