@@ -103,7 +103,7 @@ async def test_non_200_code_raises(tmp_path):
 
 @respx.mock
 async def test_synchros_uses_code_ogec(tmp_path):
-    route = respx.post(url__startswith=f"{API}synchrosED/0000000X.awp").mock(return_value=ok({"moduleVS": {}}))
+    route = respx.post(url__startswith=f"{API}synchrosED/0000000A.awp").mock(return_value=ok({"moduleVS": {}}))
     client = EcoleDirecteAdminClient(auth=fake_auth(tmp_path))
     assert await client.synchros() == {"moduleVS": {}}
     assert route.called

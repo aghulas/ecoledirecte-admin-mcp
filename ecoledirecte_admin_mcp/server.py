@@ -28,8 +28,8 @@ mcp = MCPServer(
     name="ecoledirecte-admin",
     title="EcoleDirecte Admin (prototype non officiel)",
     instructions=(
-        "Accès en lecture seule à la console admin EcoleDirecte de l'école l'établissement "
-        "([ville]) via l'API interne v3/admin, identifiée par analyse du front "
+        "Accès en lecture seule à la console admin EcoleDirecte de votre établissement "
+        "via l'API interne v3/admin, identifiée par analyse du front "
         "admin.ecoledirecte.com. Contient l'annuaire des comptes et les paramétrages, "
         "PAS les factures, notes ni messages. Les données familles/élèves sont "
         "personnelles : n'en extraire que ce qui est nécessaire à la demande."

@@ -26,7 +26,7 @@ mcp = MCPServer(
     title="EcoleDirecte espace personnel (prototype non officiel)",
     instructions=(
         "Accès en LECTURE SEULE à l'espace personnel EcoleDirecte d'un compte "
-        "personnel (secrétariat) de l'école l'établissement, via l'API interne du site "
+        "personnel (secrétariat) de votre établissement, via l'API interne du site "
         "www.ecoledirecte.com. Sert à consulter les fiches élèves par classe et "
         "l'activité de communication. Données personnelles : n'extraire "
         "que ce qui est nécessaire. Ne jamais ouvrir un message individuel."

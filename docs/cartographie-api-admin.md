@@ -1,9 +1,10 @@
 # Cartographie — API admin EcoleDirecte (admin.ecoledirecte.com)
 
-Relevé du 15/09/2026, compte admin de l'établissement 0000000X (l'établissement,
-[ville]), front admin v3.8.4-105. Méthode : lecture du JavaScript public du
+Relevé du 15/09/2026, compte admin d'un établissement de test (RNE 0000000A),
+front admin v3.8.4-105. Méthode : lecture du JavaScript public du
 front (`/scripts/scripts.41ac2ecf.js`, AngularJS) + observation des appels réels
-dans le navigateur de Claude, session ouverte par [prénom]. Aucune écriture effectuée.
+dans le navigateur de Claude, session ouverte par la personne responsable du
+connecteur. Aucune écriture effectuée.
 
 ## 1. Ce que la console admin est (et n'est pas)
 
@@ -97,7 +98,7 @@ Confirmés en lecture sur données réelles (✅) ou vus seulement dans le code 
 
 ## 7. Écriture — exception unique : `set_parametre` (16/09/2026)
 
-À la demande explicite de [prénom], une SEULE capacité d'écriture a été ajoutée,
+À la demande explicite de la personne responsable du connecteur, une SEULE capacité d'écriture a été ajoutée,
 après cartographie statique du front (lecture du bundle JS admin, aucun appel
 d'écriture réel déclenché avant l'implémentation) :
 
@@ -129,11 +130,13 @@ d'écriture réel déclenché avant l'implémentation) :
   - C'est la SEULE méthode d'écriture de tout le client ; elle ne passe jamais
     par `check_allowed` (qui continue de bloquer tout non-GET pour toutes les
     autres méthodes).
-  - Claude doit toujours redemander l'accord explicite de [prénom] en conversation
+  - Claude doit toujours redemander l'accord explicite de la personne
+    responsable du connecteur en conversation
     avant tout appel réel avec `confirm=True`, quel que soit le contexte —
     règle de fonctionnement, pas seulement garde-fou logiciel.
 
-- Pas d'environnement de test/staging utilisé (décision explicite de [prénom]) :
+- Pas d'environnement de test/staging utilisé (décision explicite de la personne
+  responsable du connecteur) :
   premiers essais réels à faire directement sur l'établissement, sur un
   paramètre à faible impact et facilement réversible, avec relecture immédiate.
 

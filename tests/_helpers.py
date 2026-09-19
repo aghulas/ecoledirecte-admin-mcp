@@ -10,10 +10,10 @@ from ecoledirecte_admin_mcp.auth import AdminAuth, Session, SessionStore
 
 API = "https://api.ecoledirecte.com/v3/admin/"
 USER = {
-    "codeOgec": "0000000X",
+    "codeOgec": "0000000A",
     "type": "A",
     "email": "admin@example.org",
-    "etablissements": [{"id": 1, "code": "SM", "RNE": "0000000X", "libelle": "l'établissement", "$$hashKey": "x"}],
+    "etablissements": [{"id": 1, "code": "ETB", "RNE": "0000000A", "libelle": "Établissement Test", "$$hashKey": "x"}],
     "parametragesRNE": {"anneeScolaireDebut": 2026, "anneeScolaireFin": 2027},
 }
 

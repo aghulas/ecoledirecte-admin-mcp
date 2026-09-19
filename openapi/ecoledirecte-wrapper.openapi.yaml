@@ -2,9 +2,9 @@ swagger: "2.0"
 info:
   title: EcoleDirecte Wrapper API
   description: >-
-    API REST "wrapper" pour l'établissement l'établissement ([ville]),
-    destinée à servir de connecteur personnalisé / action pour Microsoft 365
-    Copilot (Copilot Studio).
+    API REST "wrapper", générique pour tout établissement utilisant
+    EcoleDirecte, destinée à servir de connecteur personnalisé / action pour
+    Microsoft 365 Copilot (Copilot Studio).
 
     IMPORTANT — cette API NE DOIT PAS être remplacée par un appel direct à
     l'API interne d'EcoleDirecte (api.ecoledirecte.com). Elle réimplémente,
@@ -41,7 +41,7 @@ securityDefinitions:
     in: header
     name: X-API-Key
     description: >-
-      Phase 1 (mono-utilisateur, [prénom] uniquement) : clé API simple. Phase 2 du
+      Phase 1 (mono-utilisateur uniquement) : clé API simple. Phase 2 du
       plan d'intégration : remplacement par OAuth 2.0 / Entra ID pour
       identifier chaque utilisateur individuellement — voir
       integration-copilot365-mcp.md.
