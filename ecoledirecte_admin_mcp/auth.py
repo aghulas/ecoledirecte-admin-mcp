@@ -10,8 +10,8 @@ AuthService.login / LoginService) — voir docs/cartographie-api-admin.md §3 :
 Réponses :
   - code 200 : {token, data:{codeOgec, email, etablissements[...], parametragesRNE, ...}}
   - code 202 : étape « 3DSecure » (code envoyé par mail/SMS) → POST login/3DSecure.awp.
-    Paramètre établissement `Sites/Admin/3DSecure/Actif` = 0 chez l'établissement au
-    15/09/2026 : pas géré automatiquement, erreur explicite si ça change.
+    Paramètre établissement `Sites/Admin/3DSecure/Actif` = 0 sur l'établissement
+    testé au 15/09/2026 : pas géré automatiquement, erreur explicite si ça change.
   - code 505 : identifiant/mot de passe invalide ; 506 : code 3DSecure invalide.
 
 Le token (36 caractères) TOURNE : chaque réponse API en renvoie un nouveau, à

@@ -1,7 +1,7 @@
 # Cartographie — API espace personnel (www.ecoledirecte.com)
 
-Relevé du 16/09/2026, compte **personnel** (secrétariat) de l'école l'établissement,
-`typeCompte = A`, id 18 (Mme A. COUTOULY). Méthode : connexion faite par la
+Relevé du 16/09/2026, compte **personnel** (secrétariat) d'un établissement de
+test, `typeCompte = A`. Méthode : connexion faite par la
 personne dans le navigateur de Claude, puis observation des appels que l'app
 émet elle-même (aucun mot de passe ni jeton lu ou affiché ; aucun message ouvert,
 donc rien marqué « lu »).
@@ -46,7 +46,7 @@ Connexion faite manuellement par la personne. Flux standard EcoleDirecte
 
 ## 4. Endpoints relevés (compte personnel A, en lecture — `verbe=get`)
 
-Tous sur `apip.ecoledirecte.com/v3/`. `{id}` = 18, `{cls}` = idClasse.
+Tous sur `apip.ecoledirecte.com/v3/`. `{id}` = identifiant du compte personnel connecté, `{cls}` = idClasse.
 
 | Chemin | Contenu (clés `data`) | Écran |
 |---|---|---|
@@ -60,7 +60,7 @@ Tous sur `apip.ecoledirecte.com/v3/`. `{id}` = 18, `{cls}` = idClasse.
 | `A/{id}/postits.awp?administrable=o` | post-it / tableau d'affichage | Post-it |
 | `A/{id}/espacestravail.awp?typeModule=espaceTravail` | espaces ENT (vide) | — |
 | `niveauxListe.awp` | référentiel niveaux | Consultation |
-| `classes/{cls}/eleves.awp` | `{entity, eleves[]}` — champs élève : `id, nom, prenom, sexe, dateNaissance, email, portable, regime, numeroBadge, dateEntree, dateSortie, dispense, dispositifs, photo, classeId, classeLibelle, responsables[{id, civilite, nom, prenom, role}]` (30 élèves sur la classe testée) | Consultation |
+| `classes/{cls}/eleves.awp` | `{entity, eleves[]}` — champs élève : `id, nom, prenom, sexe, dateNaissance, email, portable, regime, numeroBadge, dateEntree, dateSortie, dispense, dispositifs, photo, classeId, classeLibelle, responsables[{id, civilite, nom, prenom, role}]` (sur la classe testée) | Consultation |
 | `eleves/{id}.awp` (corps `{"anneeScolaire":""}`) | fiche élève : `id, nom, particule, prenom, sexe, regime, dateDeNaissance, email, mobile, isPrimaire, isPP, photo, classeId, classeLibelle, classeEstNote, idEtablissement, dispositifs[]` — pas de champ santé/allergie observé | Consultation → fiche élève |
 | `eleves/{id}/coordonneesfamille.awp` (corps `{}`) | **liste** d'entrées `{adresseLigne1-3, codePostal, ville, typeLien, typeLienLibelle, responsable{civilite, nom, nomSimple, prenom, codePays, telDomicile, telTravail, telMobile, mailTravail, mailPerso, profession, societe, csp{code,libelle}}, conjoint{...même forme...}}` — une entrée par responsable légal (`conjoint` optionnel). **C'est ici que sont les coordonnées des parents.** | Consultation → fiche élève → « Coordonnées des responsables familiaux » |
 | `utilisateurs/professeurs.awp` | annuaire enseignants | Consultation |
@@ -78,8 +78,9 @@ comptes enseignant/famille) ni le conseil de classe rempli.
 
 ## 6. Décisions prises (16/09/2026)
 
-- Compte utilisé : **secrétariat** (COUTOULY, id 18), avec accord, **en attendant
-  un compte dédié à [prénom]** en cours de création dans Charlemagne. Bascule = un
+- Compte utilisé : **secrétariat**, avec accord, **en attendant
+  un compte dédié à la personne responsable du connecteur** en cours de création
+  dans l'ERP de l'établissement (Charlemagne dans notre cas). Bascule = un
   simple `login` avec l'autre identifiant.
 - Périmètre : **tout en lecture** ; jamais d'ouverture de message individuel.
 - Double authentification : **non demandée** par l'établissement pour ce compte
@@ -112,7 +113,7 @@ défaut de `profession`/`societe`/`csp` (cf. §6).
 
 ## 8. Cantine / étude / garderie — pas trouvé côté EcoleDirecte (16/09/2026)
 
-Cherché à la demande de [prénom] si les inscriptions cantine/étude du soir/garderie
+Cherché à la demande de la personne responsable du connecteur si les inscriptions cantine/étude du soir/garderie
 du matin par élève sont consultables. Négatif, sur tout ce qui a été exploré :
 
 - `activites/familles` (API admin) : référentiel des types d'activités de suivi
@@ -126,7 +127,7 @@ du matin par élève sont consultables. Négatif, sur tout ce qui a été explor
   restauration scolaire existent au catalogue EcoleDirecte (**ALISE**,
   **SKOLENGO RESTAURATION** anciennement Cater) mais **aucune n'est activée**
   pour l'établissement (`isActifEtab: false`) — donc pas de module cantine
-  intégré à EcoleDirecte pour l'établissement actuellement.
+  intégré à EcoleDirecte pour cet établissement actuellement.
 
 Conclusion provisoire : cette donnée ne semble pas être dans EcoleDirecte pour
 cette école. Piste la plus probable : le module périscolaire de **Charlemagne**

@@ -1,6 +1,6 @@
 # ecoledirecte-mcp (prototype)
 
-Deux serveurs MCP vers EcoleDirecte (école l'établissement, [ville]), APIs
+Deux serveurs MCP vers EcoleDirecte (génériques, réutilisables pour tout établissement), APIs
 internes non documentées, **en lecture seule à une exception près**
 (`ed_admin_parametre_set`, voir plus bas) :
 
@@ -57,7 +57,7 @@ Une seule fois, dans le Terminal :
 
 ```json
 "ecoledirecte-admin": {
-  "command": "/Users/remi/dev/ecoledirecte-admin-mcp/.venv/bin/ecoledirecte-admin-mcp"
+  "command": "<chemin_vers_le_repo>/.venv/bin/ecoledirecte-admin-mcp"
 }
 ```
 
@@ -105,7 +105,8 @@ Une seule fois, dans le Terminal :
   ceux que l'interface admin elle-même exclut de l'édition générique (banque,
   connecteurs partenaires, délais réglementaires…).
 - Règle de fonctionnement (pas seulement garde-fou logiciel) : Claude demande
-  toujours l'accord explicite de [prénom] en conversation avant un appel réel avec
+  toujours l'accord explicite de la personne responsable du connecteur en
+  conversation avant un appel réel avec
   `confirm=True`.
 - Aucun environnement de test séparé utilisé (décision explicite) : premiers
   essais à faire directement sur l'établissement réel, sur un paramètre à
@@ -173,6 +174,6 @@ cd ~/dev/ecoledirecte-admin-mcp
 
 ```json
 "ecoledirecte-perso": {
-  "command": "/Users/remi/dev/ecoledirecte-admin-mcp/.venv/bin/ecoledirecte-perso-mcp"
+  "command": "<chemin_vers_le_repo>/.venv/bin/ecoledirecte-perso-mcp"
 }
 ```

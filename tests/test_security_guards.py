@@ -32,7 +32,7 @@ def test_only_get_allowed(verbe):
         "supervision",  # ouverture de session à la place d'un utilisateur
         "loginsED/familles",
         "blockingState/familles/1",
-        "logins/0000000X",
+        "logins/0000000A",
         "loginCreation",
         "reinitLogin",
         "banques",

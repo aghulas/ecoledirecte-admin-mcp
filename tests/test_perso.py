@@ -24,7 +24,7 @@ from ecoledirecte_perso_mcp.client import (
 
 LOGIN = "https://api.ecoledirecte.com/v3"
 DATA = "https://apip.ecoledirecte.com/v3"
-ACCOUNT = {"id": 18, "typeCompte": "A", "nom": "COUTOULY", "prenom": "Agnès"}
+ACCOUNT = {"id": 18, "typeCompte": "A", "nom": "DURAND", "prenom": "Jeanne"}
 
 
 def make_auth(tmp_path, *, token="tok-0", cn="cn-1", cv="cv-1", logged_in=True):
@@ -207,7 +207,7 @@ async def test_classe_eleves_unexpected_shape_refused(tmp_path):
 # ---- coordonnées des responsables (eleves/{id}/coordonneesfamille) ----
 FAMILLE = [{
     "adresseLigne1": "1 rue Test", "adresseLigne2": "", "adresseLigne3": "",
-    "codePostal": "00000", "ville": "[VILLE]", "typeLien": 1, "typeLienLibelle": "Père",
+    "codePostal": "00000", "ville": "VILLE-EXEMPLE", "typeLien": 1, "typeLienLibelle": "Père",
     "responsable": {"civilite": "M.", "nom": "X", "nomSimple": "X", "prenom": "Y",
                     "telDomicile": "0100000000", "telTravail": "0200000000",
                     "telMobile": "0600000000", "mailTravail": "y@work.fr",
@@ -232,7 +232,7 @@ async def test_coordonnees_famille_redacts_by_default(tmp_path):
         assert "profession" not in d and "societe" not in d and "csp" not in d
     # coordonnées elles-mêmes conservées
     assert resp["mailPerso"] == "y@perso.fr" and resp["telMobile"] == "0600000000"
-    assert out[0]["ville"] == "[VILLE]"
+    assert out[0]["ville"] == "VILLE-EXEMPLE"
 
 
 @respx.mock
