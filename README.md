@@ -177,3 +177,24 @@ cd ~/dev/ecoledirecte-admin-mcp
   "command": "<chemin_vers_le_repo>/.venv/bin/ecoledirecte-perso-mcp"
 }
 ```
+
+## Déploiement Azure (streamable-http)
+
+Les deux serveurs vivent dans **ce même dépôt** (deux packages Python distincts,
+`ecoledirecte_admin_mcp` et `ecoledirecte_perso_mcp` — voir `pyproject.toml`) mais
+sont déployés comme **deux Web Apps Azure séparées**, chacune avec sa propre
+authentification Entra ID (scopes `EcoleDirecteAdmin.Read` / `EcoleDirectePerso.Read`,
+jamais partagés). Le Deployment Center des deux Web Apps pointe donc vers le même
+dépôt/branche — c'est le Startup Command qui choisit le module à lancer.
+
+Variables d'environnement nécessaires (voir le dépôt partagé `mcp-entra-auth`) :
+`MCP_ENTRA_TENANT_ID`, `MCP_ENTRA_APP_ID_URI`, et optionnellement
+`MCP_ENTRA_ALLOWED_GROUP_ID` / `MCP_ENTRA_PUBLIC_URL`.
+
+| Web App Azure | Module | Port | Startup Command (Configuration → Stack settings) |
+|---|---|---|---|
+| `ecoledirecte-admin-mcp-fontainebleau` | `ecoledirecte_admin_mcp` | `8001` (`WEBSITES_PORT=8001`) | `python -m ecoledirecte_admin_mcp --transport streamable-http --host 0.0.0.0 --port 8001` |
+| `ecoledirecte-perso-mcp-fontainebleau` | `ecoledirecte_perso_mcp` | `8002` (`WEBSITES_PORT=8002`) | `python -m ecoledirecte_perso_mcp --transport streamable-http --host 0.0.0.0 --port 8002` |
+
+Ports fixés dans le code (`argparse --port` de chaque `__main__.py`), pas dans cette
+doc — en cas de doute, le code fait foi.
