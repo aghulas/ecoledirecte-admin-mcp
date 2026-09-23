@@ -93,10 +93,11 @@ Confirmés en lecture sur données réelles (✅) ou vus seulement dans le code 
    voir cartographie-api-personnel.md et le serveur `ecoledirecte-perso`.
 2. **Supervision** : techniquement possible (session ouverte en tant que famille)
    mais accès tracé, et lire un message peut le marquer « lu » chez la famille.
-   Écartée définitivement.
+   Écartée pour la lecture (notes, messagerie). **Levée le 23/09/2026 pour un
+   seul usage : le dépôt de pièces à verser** — voir §8.
 3. **Factures** : la base Charlemagne consolidée existante reste la bonne source.
 
-## 7. Écriture — exception unique : `set_parametre` (16/09/2026)
+## 7. Écriture — exception n°1 : `set_parametre` (16/09/2026)
 
 À la demande explicite de la personne responsable du connecteur, une SEULE capacité d'écriture a été ajoutée,
 après cartographie statique du front (lecture du bundle JS admin, aucun appel
@@ -144,3 +145,64 @@ d'écriture réel déclenché avant l'implémentation) :
   aperçu sans écriture, forme exacte de l'écriture (verbe=post, jeton, corps),
   relecture de confirmation, code d'erreur d'écriture, garde-fou "pas d'autre
   méthode d'écriture" mis à jour pour n'autoriser que `set_parametre`.
+
+
+## 8. Écriture — exception n°2 : dépôt de pièces à verser (23/09/2026)
+
+**Besoin** : déposer dans EcoleDirecte les fiches papier « Choix des forfaits »
+scannées par le secrétariat, une par élève, dans la liste de pièces à verser
+« Fiches Rentrée ». Ces listes sont créées dans **Charlemagne Administratif**
+(tables `COM_LISTE_PIECE`, `INS_PIECES_DOSSIER`, `COM_LIEN_PIECE_PERSONNE`) et
+publiées sur EcoleDirecte ; **seul l'espace famille permet d'y téléverser**
+(aucun écran admin ni personnel ne le permet). Les dépôts remontent ensuite dans
+Charlemagne (`COM_PIECE_RECU` état « Reçue », fichier indexé en GED
+`ADM_GED_INDEX`) — vérifié le 23/09/2026 : 31 dépôts → 31 lignes.
+
+**Décision** : lever l'exclusion de la supervision (§6) *pour ce seul usage*,
+à la demande explicite de la personne responsable du connecteur. Un dépôt de
+document est une action attendue de la famille, sans lecture de sa messagerie
+ni autre effet de bord. Chaque supervision reste tracée côté EcoleDirecte au
+nom du compte admin.
+
+**Flux** (relevé par lecture des fronts admin AngularJS et famille Angular) :
+
+1. `POST v3/admin/supervision.awp?id=<compte>&type=<1 responsable|2 conjoint>&n=<NOM[:3]>&version=`
+   — formulaire `token=<jeton admin>` (directive `webDevAffichePage`) →
+   redirection `www.ecoledirecte.com/loginExterne?atoken=…&i=…`.
+2. `POST v3/loginexterne.awp?verbe=post`, `data={"aToken":…,"i":…}` → en-têtes
+   `X-Code: 200` et `X-Token` (jeton famille).
+3. `POST v3/familledocuments.awp?archive=&verbe=get` → `data.listesPiecesAVerser`
+   `{listesPieces, pieces, personnes, televersements}`.
+4. `POST v3/televersement.awp?verbe=post&mode=DOCUMENTS` (multipart, en-tête
+   `X-Token`) : `file` + `idListePiece`, `idPiece`, `idPersonne` **et** un champ
+   `data` = JSON de ces trois paramètres (ajouté par `onSending` du composant
+   Dropzone ; sans lui → code **512**). Limite du site : 10 Mo, PDF/JPEG/PNG.
+5. Relecture de (3) : le dépôt doit apparaître dans `televersements`
+   (`libelle` du type `1_<idEleve>_1_<n>.pdf`).
+
+`idPersonne` = id élève EcoleDirecte = `IDELEVE` Charlemagne (identiques).
+Une supervision peut invalider la session admin (session unique par compte) :
+le module se reconnecte automatiquement via le Trousseau et réessaie une fois.
+
+**Implémentation** : `depot_pieces.py` (outil MCP `ed_admin_deposer_piece`) et
+`depot_lot.py` (dépôt par classe en ligne de commande). Chemin d'écriture
+séparé : le client de lecture (`client.py`) bloque toujours `supervision`,
+`televersement` et `telechargement`.
+
+**Garde-fous** :
+- simulation par défaut (`confirm=False`) : aucune supervision, aucun envoi ;
+- écriture seulement si `ED_ADMIN_DEPOT_ACTIF=1` (jamais sur Azure) ;
+- PDF réel (en-tête `%PDF-`) ≤ 10 Mo, situé sous `ED_ADMIN_DEPOT_RACINE` ;
+- liste autorisée seulement (`ED_ADMIN_DEPOT_LISTES`, défaut « Fiches Rentrée ») ;
+- ne remplace jamais un dépôt existant, ne supprime rien, ne signe rien,
+  ne touche pas à la messagerie ;
+- par lot : tout fichier non rapproché ou ambigu est signalé et jamais déposé ;
+  relance idempotente ;
+- journal local `~/.ecoledirecte-admin-mcp/depots_pieces.csv` (sans jeton) +
+  bilan CSV par classe.
+
+**Tests** : `tests/test_depot_pieces.py` (17 tests, aucun réseau) — fichier
+hors racine / traversée / non-PDF / faux PDF / trop gros refusés, écriture
+désactivée par défaut, liste non autorisée refusée, dépôt existant détecté,
+rapprochement (ambiguïté, doublon, nom non conforme), simulation sans
+supervision, `confirm=True` refusé si inactif.
