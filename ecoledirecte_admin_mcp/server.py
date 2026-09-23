@@ -10,9 +10,12 @@ N'expose PAS : factures, notes, messages (absents de l'API admin), ni aucun
 endpoint renvoyant identifiants/mots de passe d'utilisateurs ou ouvrant une
 supervision (bloqués dans client.py).
 
-EXCEPTION UNIQUE (16/09/2026) : `ed_admin_parametre_set` peut écrire UN
-paramètre établissement (voir sa docstring et client.py::set_parametre). Tous
-les autres outils restent strictement lecture seule.
+EXCEPTIONS D'ÉCRITURE (2, explicites) :
+  - 16/09/2026 : `ed_admin_parametre_set` écrit UN paramètre établissement
+    (voir sa docstring et client.py::set_parametre) ;
+  - 23/09/2026 : `ed_admin_deposer_piece` dépose UN PDF dans une liste de pièces
+    à verser, au nom de la famille, via la supervision (depot_pieces.py).
+Tous les autres outils restent strictement lecture seule.
 """
 from __future__ import annotations
 
@@ -23,6 +26,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
+from .depot_pieces import deposer_piece
 
 mcp = MCPServer(
     name="ecoledirecte-admin",
@@ -181,8 +185,9 @@ async def ed_admin_referentiels_get() -> Any:
 
 @mcp.tool()
 async def ed_admin_parametre_set(libelle: str, valeur: str, confirm: bool = False) -> Any:
-    """ÉCRITURE — modifie UN paramètre établissement. C'est le SEUL outil
-    d'écriture de tout ce connecteur ; tous les autres restent lecture seule.
+    """ÉCRITURE — modifie UN paramètre établissement. Un des DEUX seuls outils
+    d'écriture de ce connecteur (avec ed_admin_deposer_piece) ; tous les autres
+    restent lecture seule.
 
     Sans confirm=True (par défaut) : n'écrit RIEN, renvoie un aperçu (valeur
     actuelle vs proposée) pour relecture. Il faut rappeler explicitement avec
@@ -224,3 +229,25 @@ async def ed_admin_activation_comptes(classe: str | None = None, inclure_noms: b
     if classe and not result["classes"]:
         raise ToolError(f"Classe '{classe}' introuvable (utilise ed_admin_classes_list).")
     return result
+
+
+@mcp.tool()
+async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = False) -> Any:
+    """ÉCRITURE — dépose UN PDF dans la liste de pièces à verser d'un élève
+    (ex. « Fiches Rentrée »), à la place de la famille, via la supervision admin.
+    L'un des deux seuls outils d'écriture de ce connecteur.
+
+    Sans confirm=True (par défaut) : SIMULATION — vérifie le fichier et retrouve
+    l'élève et le compte famille, sans superviser ni envoyer quoi que ce soit.
+    Il faut TOUJOURS obtenir l'accord explicite de l'utilisateur en conversation
+    avant d'appeler avec confirm=True.
+
+    Garde-fous : PDF ≤ 10 Mo situé sous ED_ADMIN_DEPOT_RACINE ; liste autorisée
+    (ED_ADMIN_DEPOT_LISTES, défaut « Fiches Rentrée ») ; écriture seulement si
+    ED_ADMIN_DEPOT_ACTIF=1 ; ne remplace JAMAIS un dépôt existant ; ne supprime
+    rien ; journal local de chaque dépôt. Pour une classe entière, utiliser le
+    script `python -m ecoledirecte_admin_mcp.depot_lot --classe <CLASSE>`.
+
+    `id_eleve` = id EcoleDirecte de l'élève (identique à l'IDELEVE Charlemagne,
+    trouvable via ed_admin_eleves_search). `fichier` = chemin absolu du PDF."""
+    return await deposer_piece(_get_client(), id_eleve, fichier, confirm)
