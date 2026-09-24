@@ -232,7 +232,8 @@ async def ed_admin_activation_comptes(classe: str | None = None, inclure_noms: b
 
 
 @mcp.tool()
-async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = False) -> Any:
+async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = False,
+                                 piece: str | None = None) -> Any:
     """ÉCRITURE — dépose UN PDF dans la liste de pièces à verser d'un élève
     (ex. « Fiches Rentrée »), à la place de la famille, via la supervision admin.
     L'un des deux seuls outils d'écriture de ce connecteur.
@@ -249,5 +250,8 @@ async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = Fa
     script `python -m ecoledirecte_admin_mcp.depot_lot --classe <CLASSE>`.
 
     `id_eleve` = id EcoleDirecte de l'élève (identique à l'IDELEVE Charlemagne,
-    trouvable via ed_admin_eleves_search). `fichier` = chemin absolu du PDF."""
-    return await deposer_piece(_get_client(), id_eleve, fichier, confirm)
+    trouvable via ed_admin_eleves_search). `fichier` = chemin absolu du PDF.
+    `piece` = libellé exact de la pièce quand la liste en contient plusieurs
+    (ex. « Justificatif Certificat Scolarité Ext. »). Pour une liste de type
+    Famille, le document est rattaché au compte famille de l'élève indiqué."""
+    return await deposer_piece(_get_client(), id_eleve, fichier, confirm, piece=piece)
