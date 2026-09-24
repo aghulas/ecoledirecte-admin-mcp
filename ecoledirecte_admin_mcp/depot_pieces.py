@@ -217,20 +217,37 @@ async def ouvrir_supervision(admin_client, compte: dict[str, Any]) -> SessionFam
 # ----------------------------------------------------------------------
 # Opération principale
 # ----------------------------------------------------------------------
-def _trouver_liste(lp: dict[str, Any], id_personne: int) -> tuple[dict, dict]:
+def _trouver_liste(lp: dict[str, Any], id_eleve: int, id_compte: int | None = None,
+                   piece: str | None = None) -> tuple[dict, dict, int]:
+    """→ (liste, pièce, idPersonne). Listes autorisées seulement. Si une liste
+    contient plusieurs pièces, `piece` (libellé) est obligatoire. Liste de type
+    « F » (famille) : le dépôt se rattache au compte famille, sinon à l'élève."""
     autorisees = _listes_autorisees()
     listes = [l for l in lp.get("listesPieces", []) if _norm(l.get("libelle", "")) in autorisees]
     if not listes:
         raise DepotError("Aucune liste de pièces autorisée visible pour cette famille.")
-    liste = listes[0]
-    pieces = [p for p in lp.get("pieces", [])
-              if p.get("idListePiece") == liste.get("id") and p.get("id") in (liste.get("pieces") or [p.get("id")])]
-    if len(pieces) != 1:
-        raise DepotError(f"La liste « {liste.get('libelle')} » contient {len(pieces)} pièces : cas non géré.")
+    candidats = []
+    for liste in listes:
+        pieces = [p for p in lp.get("pieces", [])
+                  if p.get("idListePiece") == liste.get("id") and p.get("id") in (liste.get("pieces") or [p.get("id")])]
+        if piece:
+            pieces = [p for p in pieces if _norm(p.get("libelle", "")) == _norm(piece)]
+        elif len(pieces) > 1:
+            raise DepotError(f"La liste « {liste.get('libelle')} » contient {len(pieces)} pièces : préciser la pièce "
+                             f"({', '.join(p.get('libelle', '') for p in pieces)}).")
+        candidats += [(liste, p) for p in pieces]
+    if len(candidats) != 1:
+        raise DepotError("Pièce introuvable dans les listes autorisées." if not candidats
+                         else "Plusieurs pièces correspondent : préciser la pièce.")
+    liste, pc = candidats[0]
+    id_personne = id_compte if liste.get("type") == "F" else id_eleve
+    if id_personne is None:
+        raise DepotError("Liste de type famille : compte famille inconnu.")
     personnes = liste.get("personnes") or [x.get("id") for x in lp.get("personnes", [])]
     if int(id_personne) not in [int(x) for x in personnes]:
-        raise DepotError("L'élève n'est pas concerné par cette liste dans l'espace de la famille.")
-    return liste, pieces[0]
+        qui = "Ce compte famille" if liste.get("type") == "F" else "L'élève"
+        raise DepotError(f"{qui} n'est pas concerné par cette liste dans l'espace de la famille.")
+    return liste, pc, int(id_personne)
 
 
 def _depot_existant(lp: dict[str, Any], id_liste: int, id_piece: int, id_personne: int) -> dict | None:
@@ -240,7 +257,8 @@ def _depot_existant(lp: dict[str, Any], id_liste: int, id_piece: int, id_personn
 
 
 async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool = False,
-                        eleves: list | None = None, familles: list | None = None) -> dict[str, Any]:
+                        eleves: list | None = None, familles: list | None = None,
+                        piece: str | None = None) -> dict[str, Any]:
     p = check_fichier(fichier)
     res = await resoudre_eleve_famille(admin_client, id_eleve, eleves, familles)
     eleve, compte = res["eleve"], res["compte"]
@@ -249,6 +267,7 @@ async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool
         "compte_famille": f"{compte.get('civilite','')} {compte['nom']} {compte['prenom']} (id {compte['id']}, {compte.get('type')})",
         "fichier": p.name,
         "taille_octets": p.stat().st_size,
+        **({"piece_demandee": piece} if piece else {}),
     }
     if not confirm:
         return {**apercu, "depot_effectue": False,
@@ -259,28 +278,28 @@ async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool
     fam = await ouvrir_supervision(admin_client, compte)
     try:
         lp = await fam.documents()
-        liste, piece = _trouver_liste(lp, eleve["id"])
-        existant = _depot_existant(lp, liste["id"], piece["id"], eleve["id"])
+        liste, pc, id_personne = _trouver_liste(lp, eleve["id"], compte["id"], piece)
+        existant = _depot_existant(lp, liste["id"], pc["id"], id_personne)
         if existant:
             return {**apercu, "depot_effectue": False, "deja_depose": True,
                     "depot_existant": {k: existant.get(k) for k in ("libelle", "date", "isLock")},
-                    "message": "Un document est déjà déposé pour cet élève : rien n'a été remplacé."}
-        payload = await fam.televerser(p, liste["id"], piece["id"], eleve["id"])
+                    "message": "Un document est déjà déposé pour cette pièce : rien n'a été remplacé."}
+        payload = await fam.televerser(p, liste["id"], pc["id"], id_personne)
         lp2 = await fam.documents()
-        verif = _depot_existant(lp2, liste["id"], piece["id"], eleve["id"])
+        verif = _depot_existant(lp2, liste["id"], pc["id"], id_personne)
         ok = payload.get("code") == 200 and verif is not None
         _journaliser({
             "horodatage": datetime.now().isoformat(timespec="seconds"),
             "id_eleve": eleve["id"], "eleve": f"{eleve['nom']} {eleve['prenom']}",
             "classe": eleve.get("libelleClasse"), "id_compte_famille": compte["id"],
-            "liste": liste.get("libelle"), "fichier": p.name,
+            "liste": liste.get("libelle"), "piece": pc.get("libelle"), "id_personne": id_personne, "fichier": p.name,
             "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
             "code_api": payload.get("code"), "verifie": ok,
         })
         if not ok:
             raise DepotError(f"Dépôt non confirmé (code {payload.get('code')} — {payload.get('message') or ''}).")
         return {**apercu, "depot_effectue": True, "liste": liste.get("libelle"),
-                "piece": piece.get("libelle"),
+                "piece": pc.get("libelle"),
                 "depot": {k: verif.get(k) for k in ("libelle", "date", "isLock")}}
     finally:
         await fam.http.aclose()
