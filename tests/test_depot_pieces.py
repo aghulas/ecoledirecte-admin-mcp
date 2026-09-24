@@ -86,8 +86,8 @@ def test_liste_non_autorisee_refusee():
 def test_liste_autorisee_et_eleve_concerne(monkeypatch):
     lp = {"listesPieces": [{"id": 1, "libelle": "Fiches Rentrée", "pieces": [1], "personnes": [101, 102]}],
           "pieces": [{"id": 1, "idListePiece": 1, "libelle": "Fiche Rentrée"}], "personnes": []}
-    liste, piece = dp._trouver_liste(lp, 102)
-    assert liste["id"] == 1 and piece["id"] == 1
+    liste, piece, idp = dp._trouver_liste(lp, 102)
+    assert liste["id"] == 1 and piece["id"] == 1 and idp == 102
     with pytest.raises(dp.DepotError, match="pas concerné"):
         dp._trouver_liste(lp, 999)
 
@@ -144,3 +144,18 @@ async def test_confirm_refuse_si_inactif(racine):
                  "enfants": [{"nom": "DUPONT", "prenom": "Alice", "idClasse": 8}]}]
     with pytest.raises(dp.DepotError, match="désactivée"):
         await dp.deposer_piece(object(), 101, str(p), confirm=True, eleves=eleves, familles=familles)
+
+
+def test_liste_famille_multi_pieces(monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEPOT_LISTES", "Fiches Rentrée|Jusitificatifs")
+    lp = {"listesPieces": [{"id": 2, "libelle": "Jusitificatifs", "type": "F", "pieces": [2, 3], "personnes": [301]}],
+          "pieces": [{"id": 2, "idListePiece": 2, "libelle": "Justificatif Cotisation APEL Ext."},
+                     {"id": 3, "idListePiece": 2, "libelle": "Justificatif Certificat Scolarité Ext."}]}
+    with pytest.raises(dp.DepotError, match="préciser la pièce"):
+        dp._trouver_liste(lp, 401, 301)
+    liste, piece, idp = dp._trouver_liste(lp, 401, 301, "Justificatif Certificat Scolarité Ext.")
+    assert piece["id"] == 3 and idp == 301          # type F → compte famille, pas l'élève
+    with pytest.raises(dp.DepotError, match="compte famille"):
+        dp._trouver_liste(lp, 401, 999, "Justificatif Certificat Scolarité Ext.")
+    with pytest.raises(dp.DepotError, match="introuvable"):
+        dp._trouver_liste(lp, 401, 301, "Autre pièce")
