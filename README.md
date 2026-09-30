@@ -148,6 +148,9 @@ dynamiques), relevé dans le JavaScript public du front admin, sert à :
 `certain: false` marque les libellés que le front construit pour plusieurs
 profils (`"Sites/" + realTypeUser + ...`) : ils peuvent ne pas exister pour l'un
 d'eux. Les indices d'établissement sont ramenés à `Etablissement_0`.
+Constaté le 30/09/2026 : le serveur semble ignorer les accents dans les libellés
+(`Sites/Eleves/Actif` suit `Sites/Elèves/Actif`) ; le catalogue garde
+l'orthographe du front.
 
 Régénérer après une évolution de l'admin EcoleDirecte :
 

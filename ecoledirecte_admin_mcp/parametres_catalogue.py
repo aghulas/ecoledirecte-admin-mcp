@@ -322,7 +322,8 @@ def decoder_base64(valeur: str) -> str | None:
     import binascii
 
     try:
-        return base64.b64decode(valeur, validate=True).decode("utf-8")
+        # Le serveur peut renvoyer un base64 « MIME » coupé en lignes de 76 caractères.
+        return base64.b64decode("".join(valeur.split()), validate=True).decode("utf-8")
     except (binascii.Error, UnicodeDecodeError, ValueError):
         return None
 

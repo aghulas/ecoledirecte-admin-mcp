@@ -1,7 +1,7 @@
 {
  "source": "scripts/scripts.41ac2ecf.js",
  "date_extraction": "2026-09-30",
- "nb_libelles": 650,
+ "nb_libelles": 640,
  "libelles": {
   "Administrateur/Alertes/Erreurs/Email": {
    "controleurs": [
@@ -39,36 +39,6 @@
    ],
    "certain": true
   },
-  "Africa/Casablanca (UTC+0)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "Africa/Dakar (UTC+0)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "America/Cayenne (UTC-3)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "America/Guadeloupe (UTC-4)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "America/Martinique (UTC-4)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
   "Autorisations/SMS": {
    "controleurs": [
     "AdministratifFamilleCtrl",
@@ -98,21 +68,9 @@
    ],
    "certain": true
   },
-  "Europe/Paris (UTC+1)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
   "FeuilleAppel/AppelEtude/Etablissement_0/Salles": {
    "controleurs": [
     "AppelProfesseursPersonnelsCtrl"
-   ],
-   "certain": true
-  },
-  "Indian/Reunion (UTC+4)": {
-   "controleurs": [
-    "AccesSitesCtrl"
    ],
    "certain": true
   },
@@ -497,24 +455,6 @@
   "OuiPass/Actif": {
    "controleurs": [
     "OuiPassCtrl"
-   ],
-   "certain": true
-  },
-  "Pacific/Gambier (UTC-9)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "Pacific/Marquesas (UTC-9:30)": {
-   "controleurs": [
-    "AccesSitesCtrl"
-   ],
-   "certain": true
-  },
-  "Pacific/Tahiti (UTC-10)": {
-   "controleurs": [
-    "AccesSitesCtrl"
    ],
    "certain": true
   },
