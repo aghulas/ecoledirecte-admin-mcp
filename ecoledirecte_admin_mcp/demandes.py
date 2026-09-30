@@ -1,4 +1,5 @@
-"""Demandes de modification AU NOM D'UNE FAMILLE (activités, régime, téléphones)
+"""Demandes de modification AU NOM D'UNE FAMILLE (activités, régime, téléphones,
+mails et téléphones des parents)
 via la supervision admin — ÉCRITURE, exception n°3 (30/09/2026).
 
 Reproduit les formulaires de l'espace famille (relevés sur le front famille et
@@ -12,7 +13,10 @@ utilisés pour ~700 demandes à la rentrée 2026, scripts ~/dev/fiches-forfaits)
       POST v3/demandemodifications/coordonnees.awp?verbe=post
       data={"modifications": {"contenu": base64(XML COMPLET de la fiche)}} — réplique
       de modifsToXml du front : tous les champs sont recopiés à l'identique, seuls les
-      téléphones changent.
+      téléphones changent ;
+  - mails / téléphones des parents (« contacts », 30/09/2026) : même demande de
+      coordonnées, seuls les champs demandés (mailPerso, mailTravail, telMobile,
+      telTravail, telDomicile du responsable ou du conjoint) changent.
 Les demandes arrivent dans Charlemagne, où le secrétariat les valide (rien n'est
 modifié directement dans la base).
 
@@ -20,13 +24,16 @@ Garde-fous :
   - sans confirm=True : SIMULATION — la fiche est LUE (supervision en lecture) pour
     calculer ce qui changerait, mais aucune demande n'est envoyée ;
   - écriture activée seulement si ED_ADMIN_DEMANDES_ACTIF=1 (jamais sur Azure) ;
-  - types autorisés : ED_ADMIN_DEMANDES_TYPES (défaut « activites,regime,telephones ») ;
+  - types autorisés : ED_ADMIN_DEMANDES_TYPES (défaut « activites,regime,telephones,contacts ») ;
   - activités : un code doit déjà figurer sur la fiche de l'élève, ou dans
     ED_ADMIN_DEMANDES_ACTIVITES (codes séparés par « | ») ;
   - refus si une demande est déjà en attente pour l'élève (activités/régime) ou pour
     la famille (coordonnées) — on ne superpose jamais deux demandes ;
   - téléphones : seuls les numéros français reconnus sont reformatés ; les autres
     (étrangers, mentions, plusieurs numéros) sont signalés, jamais modifiés ;
+  - contacts : champs limités à la liste CHAMPS_CONTACT ; téléphone français valide
+    (mis au format « 06 12 34 56 78 »), mail valide ; jamais de valeur vide (effacer
+    une coordonnée se fait dans Charlemagne) ; l'adresse n'est jamais modifiée ;
   - JAMAIS de demande sur le mode de règlement ni les coordonnées bancaires : la
     demande « mode de règlement » du site renvoie systématiquement l'IBAN complet ;
     ces informations se saisissent uniquement dans Charlemagne par le secrétariat ;
@@ -51,6 +58,9 @@ JOURS = {"L": "jour1", "M": "jour2", "J": "jour4", "V": "jour5"}
 TYPE_ACTIVITE = {"MIDI": "Repas"}
 TEL_OK = re.compile(r"^\d{2} \d{2} \d{2} \d{2} \d{2}$")
 CHAMPS_TEL = {"responsable": ("telMobile", "telTravail", "telDomicile"), "conjoint": ("telMobile", "telTravail")}
+CHAMPS_MAIL = {"responsable": ("mailPerso", "mailTravail"), "conjoint": ("mailPerso", "mailTravail")}
+CHAMPS_CONTACT = {b: CHAMPS_MAIL[b] + CHAMPS_TEL[b] for b in CHAMPS_TEL}
+MAIL_OK = re.compile(r"^[A-Za-z0-9._%+'-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$")
 
 
 class DemandeError(DepotError):
@@ -62,7 +72,7 @@ def _demandes_actives() -> bool:
 
 
 def _types_autorises() -> set[str]:
-    raw = os.environ.get("ED_ADMIN_DEMANDES_TYPES", "activites,regime,telephones")
+    raw = os.environ.get("ED_ADMIN_DEMANDES_TYPES", "activites,regime,telephones,contacts")
     return {x.strip().lower() for x in raw.split(",") if x.strip()}
 
 
@@ -205,9 +215,12 @@ def analyser_telephones(d: dict[str, Any]) -> tuple[dict[str, dict[str, str]], l
     return tels, lignes
 
 
-def xml_coordonnees(d: dict[str, Any], tels: dict[str, dict[str, str]]) -> str:
-    """Réplique exacte de modifsToXml du front famille (ordre des balises compris)."""
-    R, C = d.get("responsable") or {}, d.get("conjoint") or {}
+def xml_coordonnees(d: dict[str, Any], tels: dict[str, dict[str, str]],
+                    mails: dict[str, dict[str, str]] | None = None) -> str:
+    """Réplique exacte de modifsToXml du front famille (ordre des balises compris).
+    `mails` = mails remplacés (par bloc) ; les autres champs sont recopiés tels quels."""
+    R = {**(d.get("responsable") or {}), **((mails or {}).get("responsable") or {})}
+    C = {**(d.get("conjoint") or {}), **((mails or {}).get("conjoint") or {})}
     sf = (d.get("situationFamiliale") or {"code": 0}).get("code", 0)
     t = lambda tag, val: f"<{tag}>{escape(str(val if val is not None else ''))}</{tag}>"
     parts = [t("adresse1", d.get("adresseLigne1", "")), t("adresse2", d.get("adresseLigne2", "")),
@@ -260,6 +273,90 @@ async def demande_telephones(admin_client, compte_id: int, confirm: bool = False
                       "changements": " ; ".join(apercu["corrections"]), "corps": "(XML complet, téléphones reformatés)",
                       "code_api": r.get("code")})
         if not ok:
+            raise DemandeError(f"Demande refusée (code {r.get('code')} — {r.get('message') or ''}).")
+        return {**apercu, "demande_envoyee": True,
+                "message": "Demande envoyée : à valider dans Charlemagne, puis resynchroniser EcoleDirecte."}
+    finally:
+        await fam.http.aclose()
+
+
+# ----------------------------------------------------------------------
+# Mails / téléphones des parents (« contacts »)
+# ----------------------------------------------------------------------
+def _nom_personne(p: dict[str, Any]) -> str:
+    return f"{p.get('civilite', '')} {p.get('nomSimple') or p.get('nom', '')} {p.get('prenom', '')}".strip()
+
+
+def preparer_contacts(d: dict[str, Any], modifications: dict[str, str]) -> tuple[
+        dict[str, dict[str, str]], dict[str, dict[str, str]], list[str]]:
+    """Valide les modifications {"responsable.telMobile": "06…", "conjoint.mailPerso": "…"}.
+    → (téléphones complets à envoyer, mails remplacés, changements lisibles)."""
+    if not modifications:
+        raise DemandeError("Rien à demander : indiquer au moins un champ (ex. {\"responsable.telMobile\": \"06 12 34 56 78\"}).")
+    tels = {b: {ch: ((d.get(b) or {}).get(ch) or "") for ch in champs} for b, champs in CHAMPS_TEL.items()}
+    mails: dict[str, dict[str, str]] = {"responsable": {}, "conjoint": {}}
+    changements = []
+    for cle, valeur in modifications.items():
+        bloc, _, champ = (cle or "").partition(".")
+        if bloc not in CHAMPS_CONTACT or champ not in CHAMPS_CONTACT[bloc]:
+            permis = ", ".join(f"{b}.{c}" for b, cs in CHAMPS_CONTACT.items() for c in cs)
+            raise DemandeError(f"Champ « {cle} » non modifiable (champs permis : {permis}).")
+        p = d.get(bloc) or {}
+        if bloc == "conjoint" and not (p.get("nom") or p.get("prenom")):
+            raise DemandeError("Aucun conjoint sur la fiche de cette famille : modification impossible "
+                               "(le second parent a peut-être son propre compte famille).")
+        v = (valeur or "").strip()
+        if not v:
+            raise DemandeError(f"Valeur vide pour « {cle} » : effacer une coordonnée se fait dans Charlemagne.")
+        if champ.startswith("tel"):
+            v, st = normaliser_telephone(v)
+            if st not in ("conforme", "corrigé"):
+                raise DemandeError(f"Téléphone « {valeur} » non reconnu (numéro français à 10 chiffres attendu) : "
+                                   "à saisir dans Charlemagne.")
+            tels[bloc][champ] = v
+        else:
+            v = v.lower()
+            if not MAIL_OK.match(v):
+                raise DemandeError(f"Adresse mail « {valeur} » invalide.")
+            mails[bloc][champ] = v
+        avant = p.get(champ) or ""
+        if avant.strip() != v:
+            changements.append(f"{_nom_personne(p)} {champ} : {avant or '(vide)'} → {v}")
+    return tels, mails, changements
+
+
+async def demande_contacts(admin_client, compte_id: int, modifications: dict[str, str],
+                           confirm: bool = False) -> dict[str, Any]:
+    _exiger_type("contacts")
+    familles = await admin_client.list_utilisateurs("familles", "")
+    compte = next((f for f in familles if int(f.get("id", -1)) == int(compte_id)), None)
+    if not compte:
+        raise DemandeError(f"Compte famille {compte_id} introuvable.")
+    fam = await ouvrir_supervision(admin_client, compte)
+    try:
+        d = (await fam.appeler("famillecoordonnees", "get")).get("data") or {}
+        tels, mails, changements = preparer_contacts(d, modifications)
+        apercu = {"compte_famille": f"{compte['nom']} {compte['prenom']} (id {compte['id']})",
+                  "changements": changements}
+        if not changements:
+            return {**apercu, "demande_envoyee": False, "message": "Déjà conforme : aucune demande nécessaire."}
+        att = (await fam.appeler(f"demandemodifications/coordonnees/{compte['id']}", "get")).get("data") or {}
+        if att.get("id"):
+            return {**apercu, "demande_envoyee": False, "deja_en_attente": True,
+                    "message": "Une demande de coordonnées est déjà en attente pour cette famille : "
+                               "la faire valider dans Charlemagne d'abord."}
+        if not confirm:
+            return {**apercu, "demande_envoyee": False,
+                    "message": "Simulation : rien n'a été envoyé. Rappeler avec confirm=True."}
+        if not _demandes_actives():
+            raise DemandeError("Écriture désactivée (ED_ADMIN_DEMANDES_ACTIF≠1).")
+        contenu = base64.b64encode(xml_coordonnees(d, tels, mails).encode("utf-8")).decode()
+        r = await fam.appeler("demandemodifications/coordonnees", "post", {"modifications": {"contenu": contenu}})
+        _journaliser({"horodatage": datetime.now().isoformat(timespec="seconds"), "type": "contacts",
+                      "id_eleve": "", "eleve": "", "id_compte_famille": compte["id"],
+                      "changements": " ; ".join(changements), "corps": "(XML complet, mails/téléphones demandés)",
+                      "code_api": r.get("code")})
+        if r.get("code") != 200:
             raise DemandeError(f"Demande refusée (code {r.get('code')} — {r.get('message') or ''}).")
         return {**apercu, "demande_envoyee": True,
                 "message": "Demande envoyée : à valider dans Charlemagne, puis resynchroniser EcoleDirecte."}

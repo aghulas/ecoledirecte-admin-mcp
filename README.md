@@ -95,7 +95,7 @@ Une seule fois, dans le Terminal :
 - Paramètres ressemblant à des secrets (clés, certificats, mots de passe, IBAN…) masqués.
 - Aucun token ni mot de passe dans les messages d'erreur.
 
-### ⚠️ Écriture : quatre outils seulement
+### ⚠️ Écriture : cinq outils seulement
 
 | Outil | Depuis | Activation | Détails |
 |---|---|---|---|
@@ -103,8 +103,9 @@ Une seule fois, dans le Terminal :
 | `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés, débuts de libellés ≥ 6 lettres et/ou numéros, ex. `1|2|7` ou `Fiches Rentrée|Justificatifs`) ; simulation vérifiée en lecture seule (`verifier=True`) |
 | `ed_admin_demande_activites` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; types : `ED_ADMIN_DEMANDES_TYPES` ; codes : `ED_ADMIN_DEMANDES_ACTIVITES` |
 | `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
+| `ed_admin_demande_contacts` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; type `contacts` : mails et téléphones des parents (responsable / conjoint), jamais l'adresse ni la banque |
 
-Communs aux quatre : simulation par défaut, `confirm=True` seulement après accord explicite en
+Communs aux cinq : simulation par défaut, `confirm=True` seulement après accord explicite en
 conversation, activation par variable d'environnement (jamais sur Azure), journal local.
 **Jamais** de modification du mode de règlement ni des coordonnées bancaires (la demande
 correspondante du site renvoie l'IBAN complet) : ces données se saisissent dans Charlemagne.

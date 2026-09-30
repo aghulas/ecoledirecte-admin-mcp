@@ -193,3 +193,68 @@ def test_liste_autorisee_par_numero(monkeypatch):
     assert dp._liste_autorisee({"id": 1, "libelle": "Fiches Rentrée"})
     assert not dp._liste_autorisee({"id": 8, "libelle": "Autre"})
     assert not dp._liste_autorisee({"id": 17, "libelle": "Autre"})
+
+
+# --- mails / téléphones des parents (contacts) -----------------------------
+def test_contacts_ne_change_que_les_champs_demandes():
+    tels, mails, ch = dm.preparer_contacts(FICHE, {"responsable.telMobile": "07.11.22.33.44",
+                                                   "conjoint.mailPerso": " Anne.Dupont@Example.org "})
+    xml = dm.xml_coordonnees(FICHE, tels, mails)
+    assert "<responsableTelMobile>07 11 22 33 44</responsableTelMobile>" in xml
+    assert "<conjointMailPerso>anne.dupont@example.org</conjointMailPerso>" in xml
+    # le reste est recopié tel quel, y compris les numéros non conformes
+    assert "<responsableTelTravail>+33 1 23 45 67 89</responsableTelTravail>" in xml
+    assert "<conjointTelMobile>+966 55 123 4567</conjointTelMobile>" in xml
+    assert "<responsableMailPerso>j@example.org</responsableMailPerso>" in xml
+    assert "<adresse1>1 rue des Tests</adresse1>" in xml
+    assert len(ch) == 2
+
+
+@pytest.mark.parametrize("modifs,message", [
+    ({"responsable.adresse1": "x"}, "non modifiable"),
+    ({"responsable.iban": "x"}, "non modifiable"),
+    ({"conjoint.telDomicile": "0611223344"}, "non modifiable"),
+    ({"responsable.telMobile": "+966 55 123 4567"}, "non reconnu"),
+    ({"responsable.mailPerso": "pas-un-mail"}, "invalide"),
+    ({"responsable.mailPerso": ""}, "vide"),
+    ({}, "Rien à demander"),
+])
+def test_contacts_refus(modifs, message):
+    with pytest.raises(dm.DemandeError, match=message):
+        dm.preparer_contacts(FICHE, modifs)
+
+
+def test_contacts_sans_conjoint():
+    fiche = {**FICHE, "conjoint": {}}
+    with pytest.raises(dm.DemandeError, match="Aucun conjoint"):
+        dm.preparer_contacts(fiche, {"conjoint.telMobile": "0611223344"})
+
+
+def test_contacts_deja_conforme():
+    _, _, ch = dm.preparer_contacts(FICHE, {"responsable.telDomicile": "0611223344"})
+    assert ch == []
+
+
+async def test_contacts_simulation_puis_envoi(env, monkeypatch):
+    r = await dm.demande_contacts(FakeAdmin(), 10, {"responsable.mailTravail": "jean@example.org"})
+    assert r["demande_envoyee"] is False and env["f"].posts() == []
+    with pytest.raises(dm.DemandeError, match="désactivée"):
+        await dm.demande_contacts(FakeAdmin(), 10, {"responsable.mailTravail": "jean@example.org"}, confirm=True)
+    monkeypatch.setenv("ED_ADMIN_DEMANDES_ACTIF", "1")
+    r = await dm.demande_contacts(FakeAdmin(), 10, {"responsable.mailTravail": "jean@example.org"}, confirm=True)
+    assert r["demande_envoyee"] is True
+    (chemin, _, data), = env["f"].posts()
+    assert chemin == "demandemodifications/coordonnees"
+    assert "<responsableMailTravail>jean@example.org</responsableMailTravail>" in \
+        base64.b64decode(data["modifications"]["contenu"]).decode()
+    assert dm.JOURNAL.exists()
+
+
+async def test_contacts_en_attente_et_type(env, monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEMANDES_ACTIF", "1")
+    env["f"] = FakeFam(en_attente={"id": 99})
+    r = await dm.demande_contacts(FakeAdmin(), 10, {"responsable.telMobile": "0711223344"}, confirm=True)
+    assert r["deja_en_attente"] is True and env["f"].posts() == []
+    monkeypatch.setenv("ED_ADMIN_DEMANDES_TYPES", "activites,telephones")
+    with pytest.raises(dm.DemandeError, match="non autorisé"):
+        await dm.demande_contacts(FakeAdmin(), 10, {"responsable.telMobile": "0711223344"})
