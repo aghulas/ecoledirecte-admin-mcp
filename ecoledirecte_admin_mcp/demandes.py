@@ -36,9 +36,10 @@ Garde-fous :
   - coordonnées : champs limités à CHAMPS_RACINE / CHAMPS_PERSONNE ; téléphone
     français valide (mis au format « 06 12 34 56 78 »), mail valide, code postal à
     5 chiffres, CSP numérique ; adresse1, code postal, ville et nom jamais vides ;
-  - JAMAIS de demande sur le mode de règlement ni les coordonnées bancaires : la
-    demande « mode de règlement » du site renvoie systématiquement l'IBAN complet ;
-    ces informations se saisissent uniquement dans Charlemagne par le secrétariat ;
+  - JAMAIS de demande sur le mode de règlement ni les coordonnées bancaires dans ce
+    module ni dans un outil MCP : la demande « mode de règlement » du site renvoie
+    systématiquement l'IBAN complet ; elle existe seulement comme commande à lancer
+    soi-même dans un Terminal (rib.py), IBAN saisi par la personne et toujours masqué ;
   - chaque demande envoyée est journalisée (CSV local, sans jeton).
 """
 from __future__ import annotations

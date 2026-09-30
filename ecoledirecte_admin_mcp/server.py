@@ -302,7 +302,8 @@ async def ed_admin_demande_activites(id_eleve: int, activites: dict[str, str] | 
     (ED_ADMIN_DEMANDES_TYPES) ; code d'activité déjà présent sur la fiche ou listé
     dans ED_ADMIN_DEMANDES_ACTIVITES ; refus si une demande est déjà en attente ;
     journal local. Ne permet JAMAIS de modifier le mode de règlement ni les
-    coordonnées bancaires (à saisir dans Charlemagne par le secrétariat)."""
+    coordonnées bancaires : l'utilisateur lance lui-même, dans un Terminal,
+    `python -m ecoledirecte_admin_mcp.rib --compte <id>` (IBAN jamais vu par l'assistant)."""
     return await demande_activites(_get_client(), id_eleve, activites, regime, confirm, compte_id)
 
 
@@ -348,6 +349,6 @@ async def ed_admin_demande_coordonnees(compte_id: int, modifications: dict[str, 
     l'utilisateur avant confirm=True. Garde-fous : ED_ADMIN_DEMANDES_ACTIF=1, type
     « coordonnees » autorisé (ED_ADMIN_DEMANDES_TYPES), refus si une demande de
     coordonnées est déjà en attente, journal. JAMAIS de coordonnées bancaires ni
-    de mode de règlement. `compte_id` = id du compte famille
+    de mode de règlement (commande `…rib` lancée par l'utilisateur lui-même). `compte_id` = id du compte famille
     (ed_admin_familles_search)."""
     return await demande_coordonnees(_get_client(), compte_id, modifications, confirm)
