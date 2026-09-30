@@ -21,12 +21,19 @@ info:
     n'est pas encore développé — ce fichier sert de base pour le développer
     puis pour créer le connecteur personnalisé dans Copilot Studio.
 
+    v0.2.0 (30/09/2026) : catalogue des paramètres de l'admin (GET
+    /admin/parametres/catalogue, GET /admin/parametrage), libellés inconnus
+    refusés en lecture (400) et en écriture (403), intitulés, base64 —
+    aligné sur le connecteur MCP v0.5.0. Les autres actions d'écriture du
+    MCP (dépôt de pièces, demandes de modification) restent volontairement
+    hors de ce contrat.
+
     Note format : Power Platform / Copilot Studio exige aujourd'hui un import
     au format OpenAPI 2.0 (Swagger) pour les connecteurs personnalisés — un
     support natif OpenAPI 3.0 est annoncé (release wave 2025 wave 2) mais pas
     encore la voie standard documentée ; ce fichier est donc volontairement
     en 2.0 pour être importable directement.
-  version: "0.1.0"
+  version: "0.2.0"
 host: TODO-nom-app.azurewebsites.net
 basePath: /
 schemes:
@@ -211,10 +218,15 @@ paths:
       summary: Valeurs de paramètres établissement
       x-ms-summary: Lire des paramètres établissement
       description: >-
-        Valeurs de paramètres par libellé exact, ex.
-        'Sites/Familles/Notes/Etablissement_0/Notes/Actif',
-        'Sites/Admin/3DSecure/Actif'. Les paramètres ressemblant à des
-        secrets (clés, certificats, mots de passe, IBAN...) sont masqués.
+        Valeurs de paramètres par libellé exact, ex. 'Sites/Familles/Actif',
+        'Messagerie/Etablissement_0/Fam-Admin', avec l'intitulé lisible, le
+        menu et la rubrique de l'admin. L'API EcoleDirecte renvoie « 0 » SANS
+        ERREUR pour un libellé qui n'existe pas : les libellés sont vérifiés
+        contre le catalogue (GET /admin/parametres/catalogue) et un libellé
+        inconnu est refusé (400) avec des suggestions (souvent un accent :
+        'Sites/Elèves/Actif'). Les paramètres ressemblant à des secrets (clés,
+        certificats, mots de passe, IBAN...) sont masqués ; les valeurs
+        stockées en base64 (adresse de la page contact...) sont décodées.
       parameters:
         - name: libelles
           in: query
@@ -223,16 +235,136 @@ paths:
           collectionFormat: multi
           required: true
           description: Un ou plusieurs libellés exacts de paramètre.
+        - name: hors_catalogue
+          in: query
+          type: boolean
+          default: false
+          description: >-
+            true = lit quand même un libellé absent du catalogue (valeur alors
+            non fiable, signalée par hors_catalogue=true dans la réponse).
       responses:
         "200":
           description: Paramètres et leurs valeurs
           schema:
             type: array
-            items:
-              type: object
-              properties:
-                libelle: { type: string }
-                valeur: { type: string }
+            items: { $ref: "#/definitions/ValeurParametre" }
+        "400":
+          description: Libellé(s) absent(s) du catalogue — le message contient des suggestions.
+          schema: { $ref: "#/definitions/Erreur" }
+
+  /admin/parametres/catalogue:
+    get:
+      operationId: AdminParametresCatalogue
+      tags: [admin]
+      summary: Catalogue des paramètres établissement
+      x-ms-summary: Catalogue des paramètres de l'admin
+      description: >-
+        Catalogue hors ligne des ~650 paramètres de la console admin (aucun
+        appel à EcoleDirecte), relevé dans le JavaScript public du front :
+        libellé exact, intitulé lisible, menu (Paramétrages généraux /
+        familles / élèves / professeurs / personnels / entreprises), rubrique
+        (Messagerie, Accès sites, Documents, Vie scolaire...), fiabilité et
+        possibilité de modification. Sans filtre : sommaire (nombre de
+        paramètres par menu et rubrique). Utiliser ce catalogue pour trouver
+        le libellé exact avant GET /admin/parametres ou POST /admin/parametre.
+      parameters:
+        - name: menu
+          in: query
+          type: string
+          required: false
+          description: >-
+            'généraux', 'familles', 'élèves', 'professeurs', 'personnels',
+            'entreprises' (ou nom complet « Paramétrages … »), sans accents ni
+            casse.
+        - name: rubrique
+          in: query
+          type: string
+          required: false
+          description: Ex. 'Messagerie', 'Accès sites', 'Documents', 'Page contact', 'Vie scolaire'.
+        - name: recherche
+          in: query
+          type: string
+          required: false
+          description: Texte cherché dans le libellé ou l'intitulé (sans accents ni casse).
+      responses:
+        "200":
+          description: >-
+            Sans filtre : {source, date_extraction, nb_libelles, nb_motifs,
+            sommaire}. Avec filtre : {nombre, parametres[]}.
+          schema:
+            type: object
+            properties:
+              source: { type: string, description: Bundle JS du front d'où le catalogue a été extrait. }
+              date_extraction: { type: string }
+              nb_libelles: { type: integer }
+              nb_motifs: { type: integer }
+              sommaire:
+                type: object
+                description: "{menu: {rubrique: nombre de paramètres}}"
+                additionalProperties:
+                  type: object
+                  additionalProperties: { type: integer }
+              nombre: { type: integer }
+              parametres:
+                type: array
+                items: { $ref: "#/definitions/EntreeCatalogue" }
+        "400":
+          description: Aucun paramètre pour ce filtre.
+          schema: { $ref: "#/definitions/Erreur" }
+
+  /admin/parametrage:
+    get:
+      operationId: AdminParametrageLire
+      tags: [admin]
+      summary: Lire toute une rubrique du paramétrage
+      x-ms-summary: Lire une rubrique du paramétrage
+      description: >-
+        Valeurs actuelles de toute une rubrique (ou tout un menu) de la
+        console admin, groupées et intitulées — pour vérifier un paramétrage
+        rubrique par rubrique (ex. menu=généraux, rubrique=Messagerie : 34
+        réglages en un appel). Lecture seule ; secrets masqués ; valeurs
+        base64 décodées. Refusé (400) au-delà de 300 paramètres : préciser
+        une rubrique.
+      parameters:
+        - name: menu
+          in: query
+          type: string
+          required: true
+          description: Comme pour /admin/parametres/catalogue.
+        - name: rubrique
+          in: query
+          type: string
+          required: false
+        - name: certains_seulement
+          in: query
+          type: boolean
+          default: true
+          description: >-
+            true (défaut) = écarte les libellés dont l'existence n'est pas
+            certaine pour ce profil (certain=false dans le catalogue).
+      responses:
+        "200":
+          description: Valeurs groupées par « menu › rubrique ».
+          schema:
+            type: object
+            properties:
+              nombre: { type: integer }
+              rubriques:
+                type: object
+                description: "{« menu › rubrique »: [{libelle, intitule, valeur, valeur_decodee?}]}"
+                additionalProperties:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      libelle: { type: string }
+                      intitule: { type: string }
+                      valeur: { type: string }
+                      valeur_decodee: { type: string }
+              note: { type: string }
+        "400":
+          description: Aucun paramètre pour ce filtre, ou plus de 300 paramètres.
+          schema: { $ref: "#/definitions/Erreur" }
 
   /admin/parametre:
     post:
@@ -248,7 +380,12 @@ paths:
         changement pour de vrai. Refusé d'office pour tout paramètre
         ressemblant à un secret ou faisant partie de la liste exclue de
         l'édition générique par l'admin EcoleDirecte lui-même (règlements en
-        ligne, connecteurs partenaires, délais réglementaires notes/LSU...).
+        ligne, connecteurs partenaires, délais réglementaires notes/LSU...),
+        ainsi que pour tout libellé absent du catalogue (l'API EcoleDirecte
+        accepterait une faute de frappe sans rien changer au vrai réglage) —
+        refus 403 avant tout appel à EcoleDirecte, avec les libellés proches.
+        Les valeurs stockées en base64 (adresse, présentation de la page
+        contact) s'envoient en clair : l'encodage est fait côté serveur.
 
         Côté Copilot Studio : activer impérativement l'option "Demander une
         confirmation avant l'exécution" sur cette action, pour qu'un humain
@@ -267,7 +404,7 @@ paths:
                 type: string
                 description: >-
                   Identifiant exact du paramètre (ex.
-                  'Sites/Familles/Actif'), trouvable via GET /admin/parametres.
+                  'Sites/Familles/Actif'), trouvable via GET /admin/parametres/catalogue.
               valeur:
                 type: string
                 description: Nouvelle valeur ('0'/'1' pour un booléen, comme l'interface admin elle-même).
@@ -282,10 +419,22 @@ paths:
             type: object
             properties:
               libelle: { type: string }
-              valeur_actuelle: { type: string }
-              valeur_proposee: { type: string }
+              intitule: { type: string, description: "Aperçu : intitulé lisible du paramètre." }
+              valeur_actuelle: { type: string, description: "Aperçu : valeur actuelle (décodée si base64)." }
+              valeur_proposee: { type: string, description: "Aperçu : valeur demandée." }
+              stockage: { type: string, description: "Aperçu : « base64 (encodé automatiquement) » le cas échéant." }
+              valeur_avant: { type: string, description: "Écriture : valeur avant (décodée si base64)." }
+              valeur_demandee: { type: string, description: "Écriture : valeur demandée." }
+              valeur_apres: { type: string, description: "Écriture : valeur relue juste après (décodée si base64)." }
+              coherent: { type: boolean, description: "Écriture : la valeur relue correspond à celle envoyée." }
               ecriture_effectuee: { type: boolean }
               message: { type: string }
+        "403":
+          description: >-
+            Écriture refusée avant tout appel à EcoleDirecte : paramètre secret,
+            exclu de l'édition générique, ou absent du catalogue (libellés
+            proches dans le message).
+          schema: { $ref: "#/definitions/Erreur" }
 
   /admin/stats:
     get:
@@ -585,3 +734,37 @@ paths:
         "200":
           description: Post-it
           schema: { type: array, items: { type: object } }
+
+definitions:
+  Erreur:
+    type: object
+    properties:
+      message: { type: string, description: Message explicite (jamais de jeton ni de mot de passe). }
+  ValeurParametre:
+    type: object
+    properties:
+      libelle: { type: string }
+      valeur: { type: string, description: "'0'/'1' ou texte ; « <masqué> » pour un secret." }
+      encoded: { type: boolean, description: Champ brut renvoyé par EcoleDirecte. }
+      intitule: { type: string, description: Intitulé lisible (catalogue). }
+      menu: { type: string, description: "Menu de l'admin, ex. « Paramétrages généraux »." }
+      rubrique: { type: string, description: "Rubrique de l'admin, ex. « Messagerie »." }
+      valeur_decodee: { type: string, description: "Valeur décodée, pour les paramètres stockés en base64." }
+      hors_catalogue: { type: boolean, description: Présent (true) seulement si hors_catalogue=true a été demandé pour ce libellé. }
+      avertissement: { type: string }
+  EntreeCatalogue:
+    type: object
+    properties:
+      libelle: { type: string, description: Libellé exact (indice d'établissement ramené à Etablissement_0). }
+      intitule: { type: string }
+      menu: { type: string }
+      rubrique: { type: string }
+      certain:
+        type: boolean
+        description: >-
+          false = libellé construit par le front pour plusieurs profils, dont
+          l'existence n'est pas garantie pour chacun.
+      secret: { type: boolean, description: Valeur masquée en lecture. }
+      modifiable: { type: boolean, description: false = refusé par POST /admin/parametre. }
+      base64: { type: boolean, description: Valeur stockée en base64 (décodée / encodée par le serveur). }
+      motif: { type: string, description: "Pour un libellé dynamique : motif du catalogue, ex. ModeRestreint/PeriodesModeNormal_{jour}_de." }
