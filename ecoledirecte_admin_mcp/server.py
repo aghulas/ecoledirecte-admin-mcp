@@ -26,7 +26,8 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
-from .depot_pieces import deposer_piece
+from .demandes import demande_activites, demande_telephones
+from .depot_pieces import deposer_piece, etat_pieces
 
 mcp = MCPServer(
     name="ecoledirecte-admin",
@@ -185,7 +186,7 @@ async def ed_admin_referentiels_get() -> Any:
 
 @mcp.tool()
 async def ed_admin_parametre_set(libelle: str, valeur: str, confirm: bool = False) -> Any:
-    """ÉCRITURE — modifie UN paramètre établissement. Un des DEUX seuls outils
+    """ÉCRITURE — modifie UN paramètre établissement. Un des QUATRE seuls outils
     d'écriture de ce connecteur (avec ed_admin_deposer_piece) ; tous les autres
     restent lecture seule.
 
@@ -233,10 +234,10 @@ async def ed_admin_activation_comptes(classe: str | None = None, inclure_noms: b
 
 @mcp.tool()
 async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = False,
-                                 piece: str | None = None) -> Any:
+                                 piece: str | None = None, compte_id: int | None = None) -> Any:
     """ÉCRITURE — dépose UN PDF dans la liste de pièces à verser d'un élève
     (ex. « Fiches Rentrée »), à la place de la famille, via la supervision admin.
-    L'un des deux seuls outils d'écriture de ce connecteur.
+    L'un des quatre seuls outils d'écriture de ce connecteur.
 
     Sans confirm=True (par défaut) : SIMULATION — vérifie le fichier et retrouve
     l'élève et le compte famille, sans superviser ni envoyer quoi que ce soit.
@@ -244,7 +245,7 @@ async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = Fa
     avant d'appeler avec confirm=True.
 
     Garde-fous : PDF ≤ 10 Mo situé sous ED_ADMIN_DEPOT_RACINE ; liste autorisée
-    (ED_ADMIN_DEPOT_LISTES, défaut « Fiches Rentrée ») ; écriture seulement si
+    (ED_ADMIN_DEPOT_LISTES : libellés et/ou numéros de listes, défaut « Fiches Rentrée ») ; écriture seulement si
     ED_ADMIN_DEPOT_ACTIF=1 ; ne remplace JAMAIS un dépôt existant ; ne supprime
     rien ; journal local de chaque dépôt. Pour une classe entière, utiliser le
     script `python -m ecoledirecte_admin_mcp.depot_lot --classe <CLASSE>`.
@@ -253,5 +254,63 @@ async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = Fa
     trouvable via ed_admin_eleves_search). `fichier` = chemin absolu du PDF.
     `piece` = libellé exact de la pièce quand la liste en contient plusieurs
     (ex. « Justificatif Certificat Scolarité Ext. »). Pour une liste de type
-    Famille, le document est rattaché au compte famille de l'élève indiqué."""
-    return await deposer_piece(_get_client(), id_eleve, fichier, confirm, piece=piece)
+    Famille, le document est rattaché au compte famille de l'élève indiqué.
+    `compte_id` = compte famille à utiliser (par défaut le responsable) : doit être
+    un compte rattaché à l'élève — ex. déposer sur le compte du second parent quand
+    le premier a déjà un document pour cette pièce (parents séparés, 2e certificat)."""
+    return await deposer_piece(_get_client(), id_eleve, fichier, confirm, piece=piece, compte_id=compte_id)
+
+
+@mcp.tool()
+async def ed_admin_pieces_etat(id_eleve: int, compte_id: int | None = None) -> Any:
+    """LECTURE — état des « pièces à verser » visibles dans l'espace d'une famille :
+    pour chaque liste et chaque pièce, qui est concerné, si un document est déposé,
+    à quelle date, et s'il est verrouillé (récupéré par Charlemagne). Indique aussi
+    si le connecteur est autorisé à déposer dans chaque liste. Sert à savoir ce
+    qu'une famille a déjà déposé elle-même avant un dépôt, ou à vérifier un dépôt.
+    Ouvre une supervision en lecture seule ; ne télécharge ni ne modifie rien.
+    `id_eleve` = un élève de la famille ; `compte_id` = compte famille précis
+    (par défaut le responsable)."""
+    return await etat_pieces(_get_client(), id_eleve, compte_id)
+
+
+@mcp.tool()
+async def ed_admin_demande_activites(id_eleve: int, activites: dict[str, str] | None = None,
+                                     regime: int | None = None, confirm: bool = False,
+                                     compte_id: int | None = None) -> Any:
+    """ÉCRITURE — envoie, au nom de la famille, une DEMANDE de modification des
+    activités (garderie, étude, cantine…) et/ou du régime d'un élève, comme le
+    formulaire « Vos informations » de l'espace famille. La demande arrive dans
+    Charlemagne, où le secrétariat la valide : rien n'est modifié directement.
+
+    `activites` = {code: jours}, jours parmi L M J V (ex. {"ETUDE": "LMJ",
+    "MIDI": "LMJV", "MATIN": ""} ; "" = retirer tous les jours). Seules les
+    activités qui changent sont envoyées. `regime` = id EcoleDirecte du régime
+    (ex. 1 demi-pensionnaire, 2 externe — vérifier sur l'établissement).
+
+    Sans confirm=True (par défaut) : SIMULATION — la fiche est lue pour montrer
+    exactement ce qui changerait, rien n'est envoyé. Il faut TOUJOURS obtenir
+    l'accord explicite de l'utilisateur en conversation avant confirm=True.
+    Garde-fous : ED_ADMIN_DEMANDES_ACTIF=1 requis ; types autorisés
+    (ED_ADMIN_DEMANDES_TYPES) ; code d'activité déjà présent sur la fiche ou listé
+    dans ED_ADMIN_DEMANDES_ACTIVITES ; refus si une demande est déjà en attente ;
+    journal local. Ne permet JAMAIS de modifier le mode de règlement ni les
+    coordonnées bancaires (à saisir dans Charlemagne par le secrétariat)."""
+    return await demande_activites(_get_client(), id_eleve, activites, regime, confirm, compte_id)
+
+
+@mcp.tool()
+async def ed_admin_demande_telephones(compte_id: int, confirm: bool = False) -> Any:
+    """ÉCRITURE — reformate les téléphones d'une famille au format
+    « 06 12 34 56 78 » (requis pour l'envoi de SMS) par une DEMANDE de
+    modification des coordonnées, comme le formulaire de l'espace famille. Tous
+    les autres champs de la fiche (adresse, mails, profession…) sont renvoyés à
+    l'identique. Seuls les numéros français reconnus sont reformatés ; les autres
+    (étrangers, mentions, plusieurs numéros) sont listés « à traiter à la main ».
+
+    Sans confirm=True (par défaut) : SIMULATION (lecture de la fiche, rien n'est
+    envoyé). Il faut TOUJOURS obtenir l'accord explicite de l'utilisateur avant
+    confirm=True. Garde-fous : ED_ADMIN_DEMANDES_ACTIF=1, type « telephones »
+    autorisé, refus si une demande de coordonnées est déjà en attente, journal.
+    `compte_id` = id du compte famille (ed_admin_familles_search)."""
+    return await demande_telephones(_get_client(), compte_id, confirm)
