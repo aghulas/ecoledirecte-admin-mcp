@@ -30,6 +30,13 @@ def test_libelles_reels_connus(libelle):
     assert cat.est_connu(libelle)
 
 
+def test_pas_de_fuseaux_horaires_dans_le_catalogue():
+    # « Europe/Paris (UTC+1) » est une option de liste du front, pas un paramètre.
+    assert not cat.est_connu("Europe/Paris (UTC+1)")
+    assert not any("(UTC" in e["libelle"] for e in cat.lister("généraux", "accès sites"))
+    assert cat.est_connu("Sites/FuseauHoraire")
+
+
 def test_libelle_inconnu_et_suggestion_accent():
     assert not cat.est_connu("Zzz/Inexistant/Actif")
     assert not cat.est_connu("Sites/Enseignants/Actif")
@@ -74,6 +81,9 @@ def test_base64():
     enc = cat.encoder_base64("71 rue X\n77300 Fontainebleau")
     assert cat.decoder_base64(enc) == "71 rue X\n77300 Fontainebleau"
     assert cat.decoder_base64("pas du base64 !") is None
+    # base64 « MIME » coupé en lignes (cas réel : Sites/Inscriptions/ContenuMail)
+    long_ = cat.encoder_base64("Merci pour l'intérêt que vous portez à notre établissement. " * 3)
+    assert cat.decoder_base64("\n".join(long_[i:i + 76] for i in range(0, len(long_), 76))).startswith("Merci")
 
 
 # ---- outil de lecture : refus hors catalogue, sans appel réseau ----

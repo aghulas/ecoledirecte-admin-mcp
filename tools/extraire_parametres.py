@@ -104,6 +104,10 @@ def extraire(js: str) -> tuple[dict, list]:
             lib = "".join(combo)
             if "/" not in lib or not lib[0].isupper() or lib.endswith(("/", "_")):
                 continue
+            if " (UTC" in lib:
+                # Libellés de la liste des fuseaux horaires (« Europe/Paris (UTC+1) »),
+                # pas des paramètres : la valeur est dans Sites/FuseauHoraire.
+                continue
             if motif:
                 motifs[lib].add(nom_ctrl or "?")
                 continue
