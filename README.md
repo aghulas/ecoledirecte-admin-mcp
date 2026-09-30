@@ -103,7 +103,7 @@ Une seule fois, dans le Terminal :
 | `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés, débuts de libellés ≥ 6 lettres et/ou numéros, ex. `1|2|7` ou `Fiches Rentrée|Justificatifs`) ; simulation vérifiée en lecture seule (`verifier=True`) |
 | `ed_admin_demande_activites` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; types : `ED_ADMIN_DEMANDES_TYPES` ; codes : `ED_ADMIN_DEMANDES_ACTIVITES` |
 | `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
-| `ed_admin_demande_contacts` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; type `contacts` : mails et téléphones des parents (responsable / conjoint), jamais l'adresse ni la banque |
+| `ed_admin_demande_coordonnees` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; type `coordonnees` : adresse, et pour chaque parent nom, mails, téléphones, profession, société, CSP ; jamais la banque |
 
 Communs aux cinq : simulation par défaut, `confirm=True` seulement après accord explicite en
 conversation, activation par variable d'environnement (jamais sur Azure), journal local.

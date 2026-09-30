@@ -26,7 +26,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
-from .demandes import demande_activites, demande_contacts, demande_telephones
+from .demandes import demande_activites, demande_coordonnees, demande_telephones
 from .depot_pieces import deposer_piece, etat_pieces
 
 mcp = MCPServer(
@@ -324,24 +324,30 @@ async def ed_admin_demande_telephones(compte_id: int, confirm: bool = False) -> 
 
 
 @mcp.tool()
-async def ed_admin_demande_contacts(compte_id: int, modifications: dict[str, str],
-                                    confirm: bool = False) -> Any:
-    """ÉCRITURE — envoie, au nom de la famille, une DEMANDE de modification des
-    mails et/ou téléphones des parents, comme le formulaire de l'espace famille.
-    La demande arrive dans Charlemagne, où le secrétariat la valide.
+async def ed_admin_demande_coordonnees(compte_id: int, modifications: dict[str, str],
+                                       confirm: bool = False) -> Any:
+    """ÉCRITURE — envoie, au nom de la famille, une DEMANDE de modification de ses
+    coordonnées, comme le formulaire de l'espace famille. La demande arrive dans
+    Charlemagne, où le secrétariat la valide : rien n'est modifié directement.
 
-    `modifications` = {"<bloc>.<champ>": valeur}, bloc = responsable ou conjoint,
-    champ parmi mailPerso, mailTravail, telMobile, telTravail, telDomicile
-    (telDomicile : responsable seulement). Ex. {"responsable.telMobile":
-    "0612345678", "conjoint.mailPerso": "prenom.nom@example.org"}. Les téléphones
-    sont mis au format « 06 12 34 56 78 » ; seuls les numéros français sont
-    acceptés. Tous les autres champs (adresse, autres mails et téléphones,
-    profession…) sont renvoyés à l'identique. Pas de valeur vide.
+    `modifications` = {champ: valeur}. Champs permis :
+      - adresse : adresse1, adresse2, adresse3, codePostal (5 chiffres), ville ;
+      - "responsable.<champ>" ou "conjoint.<champ>" : nom, mailPerso, mailTravail,
+        telMobile, telTravail, telDomicile (responsable seulement), profession,
+        societe, csp (code numérique).
+    Ex. {"responsable.telMobile": "0612345678", "conjoint.mailPerso":
+    "prenom.nom@example.org", "adresse1": "3 rue …", "codePostal": "77300",
+    "ville": "FONTAINEBLEAU"}. Téléphones mis au format « 06 12 34 56 78 »
+    (numéros français seulement) ; "" efface un champ facultatif ; adresse1,
+    codePostal, ville et nom jamais vides. Civilité, prénom et situation
+    familiale ne sont pas modifiables. Tous les autres champs sont renvoyés à
+    l'identique.
 
     Sans confirm=True (par défaut) : SIMULATION (la fiche est lue, avant → après
     affiché, rien n'est envoyé). Il faut TOUJOURS obtenir l'accord explicite de
     l'utilisateur avant confirm=True. Garde-fous : ED_ADMIN_DEMANDES_ACTIF=1, type
-    « contacts » autorisé (ED_ADMIN_DEMANDES_TYPES), refus si une demande de
-    coordonnées est déjà en attente, journal. JAMAIS de coordonnées bancaires.
-    `compte_id` = id du compte famille (ed_admin_familles_search)."""
-    return await demande_contacts(_get_client(), compte_id, modifications, confirm)
+    « coordonnees » autorisé (ED_ADMIN_DEMANDES_TYPES), refus si une demande de
+    coordonnées est déjà en attente, journal. JAMAIS de coordonnées bancaires ni
+    de mode de règlement. `compte_id` = id du compte famille
+    (ed_admin_familles_search)."""
+    return await demande_coordonnees(_get_client(), compte_id, modifications, confirm)
