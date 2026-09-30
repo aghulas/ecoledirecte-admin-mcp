@@ -218,3 +218,16 @@ async def test_simulation_verifiee_voit_liste_et_depot_existant(racine, monkeypa
                                piece="Justificatif Certificat Scolarité Ext.", verifier=True)
     assert r["depot_effectue"] is False and r["deja_depose"] is True
     assert r["liste"] == "Justificatifs Frateries"
+
+
+def test_fichier_onedrive_illisible_message_clair(racine, monkeypatch):
+    p = _pdf(racine / "CM2B" / "en_ligne.pdf")
+    real_open = Path.open
+
+    def open_timeout(self, *a, **k):
+        if self == p.resolve():
+            raise TimeoutError(60, "Operation timed out")
+        return real_open(self, *a, **k)
+    monkeypatch.setattr(Path, "open", open_timeout)
+    with pytest.raises(dp.DepotError, match="OneDrive"):
+        dp.check_fichier(str(p))
