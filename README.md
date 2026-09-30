@@ -100,7 +100,7 @@ Une seule fois, dans le Terminal :
 | Outil | Depuis | Activation | Détails |
 |---|---|---|---|
 | `ed_admin_parametre_set` | 16/09/2026 | toujours `confirm=True` | ci-dessous et `docs/cartographie-api-admin.md` §7 |
-| `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés et/ou numéros, ex. `1|2|7`) |
+| `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés, débuts de libellés ≥ 6 lettres et/ou numéros, ex. `1|2|7` ou `Fiches Rentrée|Justificatifs`) ; simulation vérifiée en lecture seule (`verifier=True`) |
 | `ed_admin_demande_activites` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; types : `ED_ADMIN_DEMANDES_TYPES` ; codes : `ED_ADMIN_DEMANDES_ACTIVITES` |
 | `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
 

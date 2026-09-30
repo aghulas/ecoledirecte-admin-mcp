@@ -159,3 +159,62 @@ def test_liste_famille_multi_pieces(monkeypatch):
         dp._trouver_liste(lp, 401, 999, "Justificatif Certificat Scolarité Ext.")
     with pytest.raises(dp.DepotError, match="introuvable"):
         dp._trouver_liste(lp, 401, 301, "Autre pièce")
+
+
+# --- listes renommées : autorisation par début de libellé (30/09/2026) ----
+def test_liste_autorisee_par_prefixe(monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEPOT_LISTES", "Fiches Rentrée|Jusitificatifs")
+    renommee = {"id": 2, "libelle": "Jusitificatifs Frateries Enseignement Catholique Exterieur"}
+    assert dp._liste_autorisee(renommee)
+    assert not dp._liste_autorisee({"id": 3, "libelle": "PAI"})
+
+
+def test_prefixe_trop_court_ignore(monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEPOT_LISTES", "PAI")
+    assert dp._liste_autorisee({"id": 3, "libelle": "PAI"})              # exact : oui
+    assert not dp._liste_autorisee({"id": 9, "libelle": "PAIEMENTS"})    # préfixe < 6 lettres : non
+
+
+def test_erreur_liste_les_listes_visibles(monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEPOT_LISTES", "Fiches Rentrée")
+    lp = {"listesPieces": [{"id": 2, "libelle": "Justificatifs fratrie", "type": "F", "pieces": [3]}],
+          "pieces": [{"id": 3, "idListePiece": 2, "libelle": "Justificatif Certificat Scolarité Ext."}]}
+    with pytest.raises(dp.DepotError) as exc:
+        dp._trouver_liste(lp, 401, 301, "Justificatif Certificat Scolarité Ext.")
+    msg = str(exc.value)
+    assert "Justificatifs fratrie" in msg and "NON autorisée" in msg and "ED_ADMIN_DEPOT_LISTES" in msg
+
+
+# --- simulation vérifiée : supervision en lecture seule, jamais de téléversement ----
+async def test_simulation_verifiee_voit_liste_et_depot_existant(racine, monkeypatch):
+    monkeypatch.setenv("ED_ADMIN_DEPOT_LISTES", "Justificatifs")
+    p = _pdf(racine / "CM2B" / "FRATRIE_DUPONT_201.pdf")
+    lp = {"listesPieces": [{"id": 2, "libelle": "Justificatifs Frateries", "type": "F", "pieces": [3],
+                            "personnes": [201]}],
+          "pieces": [{"id": 3, "idListePiece": 2, "libelle": "Justificatif Certificat Scolarité Ext."}],
+          "televersements": [{"idListePiece": 2, "idPiece": 3, "idPersonne": 201, "libelle": "x.pdf",
+                              "date": "2026-09-24", "isLock": True}]}
+
+    class FauxHttp:
+        async def aclose(self):
+            pass
+
+    class FausseSession:
+        http = FauxHttp()
+
+        async def documents(self):
+            return lp
+
+        async def televerser(self, *a, **k):
+            raise AssertionError("la simulation ne doit jamais téléverser")
+
+    async def fausse_supervision(*a, **k):
+        return FausseSession()
+    monkeypatch.setattr(dp, "ouvrir_supervision", fausse_supervision)
+    eleves = [{"id": 101, "nom": "DUPONT", "prenom": "Alice", "idClasse": 8, "libelleClasse": "CM2 B"}]
+    familles = [{"id": 201, "nom": "DUPONT", "prenom": "Claire", "type": "responsable",
+                 "enfants": [{"nom": "DUPONT", "prenom": "Alice", "idClasse": 8}]}]
+    r = await dp.deposer_piece(object(), 101, str(p), confirm=False, eleves=eleves, familles=familles,
+                               piece="Justificatif Certificat Scolarité Ext.", verifier=True)
+    assert r["depot_effectue"] is False and r["deja_depose"] is True
+    assert r["liste"] == "Justificatifs Frateries"

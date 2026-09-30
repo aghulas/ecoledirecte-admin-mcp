@@ -234,18 +234,24 @@ async def ed_admin_activation_comptes(classe: str | None = None, inclure_noms: b
 
 @mcp.tool()
 async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = False,
-                                 piece: str | None = None, compte_id: int | None = None) -> Any:
+                                 piece: str | None = None, compte_id: int | None = None,
+                                 verifier: bool = True) -> Any:
     """ÉCRITURE — dépose UN PDF dans la liste de pièces à verser d'un élève
     (ex. « Fiches Rentrée »), à la place de la famille, via la supervision admin.
     L'un des quatre seuls outils d'écriture de ce connecteur.
 
     Sans confirm=True (par défaut) : SIMULATION — vérifie le fichier et retrouve
-    l'élève et le compte famille, sans superviser ni envoyer quoi que ce soit.
+    l'élève et le compte famille, sans rien envoyer. Avec verifier=True (défaut
+    de l'outil), la simulation ouvre aussi une supervision EN LECTURE SEULE pour
+    contrôler que la liste et la pièce existent, sont autorisées, et qu'aucun
+    document n'est déjà déposé ; verifier=False = simulation hors ligne.
     Il faut TOUJOURS obtenir l'accord explicite de l'utilisateur en conversation
     avant d'appeler avec confirm=True.
 
     Garde-fous : PDF ≤ 10 Mo situé sous ED_ADMIN_DEPOT_RACINE ; liste autorisée
-    (ED_ADMIN_DEPOT_LISTES : libellés et/ou numéros de listes, défaut « Fiches Rentrée ») ; écriture seulement si
+    (ED_ADMIN_DEPOT_LISTES : libellés, débuts de libellés (≥ 6 lettres) et/ou
+    numéros de listes, défaut « Fiches Rentrée ») ; en cas de refus, l'erreur
+    liste les listes visibles et leur statut ; écriture seulement si
     ED_ADMIN_DEPOT_ACTIF=1 ; ne remplace JAMAIS un dépôt existant ; ne supprime
     rien ; journal local de chaque dépôt. Pour une classe entière, utiliser le
     script `python -m ecoledirecte_admin_mcp.depot_lot --classe <CLASSE>`.
@@ -258,7 +264,8 @@ async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = Fa
     `compte_id` = compte famille à utiliser (par défaut le responsable) : doit être
     un compte rattaché à l'élève — ex. déposer sur le compte du second parent quand
     le premier a déjà un document pour cette pièce (parents séparés, 2e certificat)."""
-    return await deposer_piece(_get_client(), id_eleve, fichier, confirm, piece=piece, compte_id=compte_id)
+    return await deposer_piece(_get_client(), id_eleve, fichier, confirm, piece=piece, compte_id=compte_id,
+                               verifier=verifier)
 
 
 @mcp.tool()

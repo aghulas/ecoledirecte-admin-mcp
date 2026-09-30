@@ -70,9 +70,30 @@ def _listes_autorisees() -> list[str]:
     return [("#" + x.strip()) if x.strip().isdigit() else _norm(x) for x in raw.split("|") if x.strip()]
 
 
+PREFIXE_MIN = 6  # longueur minimale (normalisée) d'un libellé autorisé utilisé comme préfixe
+
+
 def _liste_autorisee(liste: dict[str, Any]) -> bool:
+    """Une liste est autorisée si son numéro (« #7 ») ou son libellé exact figure
+    dans ED_ADMIN_DEPOT_LISTES, ou si son libellé COMMENCE par un libellé autorisé
+    (≥ 6 lettres) : « Justificatifs » autorise aussi « Justificatifs Frateries … »,
+    pour qu'un renommage de la liste dans Charlemagne ne bloque plus les dépôts."""
     autorisees = _listes_autorisees()
-    return _norm(liste.get("libelle", "")) in autorisees or f"#{liste.get('id')}" in autorisees
+    lib = _norm(liste.get("libelle", ""))
+    if lib in autorisees or f"#{liste.get('id')}" in autorisees:
+        return True
+    return any(not a.startswith("#") and len(a) >= PREFIXE_MIN and lib.startswith(a) for a in autorisees)
+
+
+def _resume_listes(lp: dict[str, Any]) -> str:
+    """Listes visibles dans l'espace de la famille, avec leurs pièces et leur statut —
+    pour des messages d'erreur qui disent quoi corriger."""
+    parts = []
+    for l in lp.get("listesPieces", []):
+        pieces = [p.get("libelle", "") for p in lp.get("pieces", []) if p.get("idListePiece") == l.get("id")]
+        statut = "autorisée" if _liste_autorisee(l) else "NON autorisée"
+        parts.append(f"« {l.get('libelle')} » (n° {l.get('id')}, {statut} ; pièces : {', '.join(pieces) or '—'})")
+    return "; ".join(parts) or "aucune"
 
 
 def _depot_actif() -> bool:
@@ -245,7 +266,9 @@ def _trouver_liste(lp: dict[str, Any], id_eleve: int, id_compte: int | None = No
     « F » (famille) : le dépôt se rattache au compte famille, sinon à l'élève."""
     listes = [l for l in lp.get("listesPieces", []) if _liste_autorisee(l)]
     if not listes:
-        raise DepotError("Aucune liste de pièces autorisée visible pour cette famille.")
+        raise DepotError("Aucune liste de pièces autorisée visible pour cette famille. Listes visibles : "
+                         f"{_resume_listes(lp)}. Pour en autoriser une, ajouter son libellé (ou son "
+                         "numéro) à ED_ADMIN_DEPOT_LISTES puis redémarrer Claude Desktop.")
     candidats = []
     for liste in listes:
         pieces = [p for p in lp.get("pieces", [])
@@ -257,8 +280,8 @@ def _trouver_liste(lp: dict[str, Any], id_eleve: int, id_compte: int | None = No
                              f"({', '.join(p.get('libelle', '') for p in pieces)}).")
         candidats += [(liste, p) for p in pieces]
     if len(candidats) != 1:
-        raise DepotError("Pièce introuvable dans les listes autorisées." if not candidats
-                         else "Plusieurs pièces correspondent : préciser la pièce.")
+        raise DepotError(f"Pièce introuvable dans les listes autorisées. Listes visibles : {_resume_listes(lp)}."
+                         if not candidats else "Plusieurs pièces correspondent : préciser la pièce.")
     liste, pc = candidats[0]
     id_personne = id_compte if liste.get("type") == "F" else id_eleve
     if id_personne is None:
@@ -290,7 +313,12 @@ def choisir_compte(res: dict[str, Any], compte_id: int | None) -> dict[str, Any]
 
 async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool = False,
                         eleves: list | None = None, familles: list | None = None,
-                        piece: str | None = None, compte_id: int | None = None) -> dict[str, Any]:
+                        piece: str | None = None, compte_id: int | None = None,
+                        verifier: bool = False) -> dict[str, Any]:
+    """Sans confirm : simulation. Avec `verifier=True`, la simulation ouvre en plus
+    une supervision EN LECTURE SEULE (comme etat_pieces) pour contrôler que la liste
+    et la pièce existent, sont autorisées, et qu'aucun document n'est déjà déposé —
+    ce qui fait échouer le dépôt réel est ainsi vu avant l'accord de l'utilisateur."""
     p = check_fichier(fichier)
     res = await resoudre_eleve_famille(admin_client, id_eleve, eleves, familles)
     eleve, compte = res["eleve"], choisir_compte(res, compte_id)
@@ -301,9 +329,25 @@ async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool
         "taille_octets": p.stat().st_size,
         **({"piece_demandee": piece} if piece else {}),
     }
-    if not confirm:
+    if not confirm and not verifier:
         return {**apercu, "depot_effectue": False,
-                "message": "Simulation : rien n'a été envoyé ni supervisé. Rappeler avec confirm=True."}
+                "message": "Simulation : rien n'a été envoyé ni supervisé. La liste et la pièce ne sont PAS "
+                           "vérifiées (verifier=True ou ed_admin_pieces_etat). Rappeler avec confirm=True."}
+    if not confirm:
+        fam = await ouvrir_supervision(admin_client, compte)
+        try:
+            lp = await fam.documents()
+        finally:
+            await fam.http.aclose()
+        liste, pc, id_personne = _trouver_liste(lp, eleve["id"], compte["id"], piece)
+        existant = _depot_existant(lp, liste["id"], pc["id"], id_personne)
+        return {**apercu, "depot_effectue": False, "liste": liste.get("libelle"), "piece": pc.get("libelle"),
+                "deja_depose": bool(existant),
+                **({"depot_existant": {k: existant.get(k) for k in ("libelle", "date", "isLock")}} if existant else {}),
+                "message": ("Simulation vérifiée (supervision en lecture seule) : un document est DÉJÀ déposé, "
+                            "le dépôt réel ne remplacerait rien." if existant else
+                            "Simulation vérifiée (supervision en lecture seule) : liste et pièce autorisées, "
+                            "rien de déposé. Rappeler avec confirm=True pour déposer.")}
     if not _depot_actif():
         raise DepotError("Écriture désactivée (ED_ADMIN_DEPOT_ACTIF≠1).")
 
