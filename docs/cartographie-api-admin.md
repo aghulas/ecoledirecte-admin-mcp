@@ -237,8 +237,20 @@ forfaits, régime, reformatage des téléphones pour les SMS) envoyées par scri
 Les demandes apparaissent dans Charlemagne (« demandes de modification »), où le secrétariat les
 valide ; rien n'est écrit directement.
 
-**Non implémenté volontairement** : la demande « mode de règlement »
-(`<modeReglement><IBAN><BIC><Domiciliation><Tire>`) — l'IBAN complet est toujours renvoyé.
+**Mode de règlement / RIB — pas d'outil MCP, commande `python -m ecoledirecte_admin_mcp.rib`**
+(30/09/2026, lancée à la main dans un Terminal ; relevé sur le composant « Mode de règlement » du
+front famille) :
+- lecture : `famillemodedereglement` (get) → `{modedereglement, demandeencours, iban, bic,
+  domiciliation, tire}` — l'IBAN complet est renvoyé, d'où l'absence d'outil MCP ; demande en
+  attente : `demandemodifications/modeReg/<idCompte>` (get) ;
+- RIB : `televersement.awp?verbe=post`, multipart `file`, sans paramètre → `data.unc` ; obligatoire
+  dès que l'IBAN change (le site refuse sinon) ; PDF, JPEG ou PNG, 5 Mo au plus ;
+- envoi : `demandemodifications/modeReg` (post), `{"modifications": {"contenu": base64(XML),
+  "uncRIB": unc}}`, XML `<demandeModifications><modeReglement>Prélèvement</modeReglement><IBAN>
+  <BIC><Domiciliation><Tire><AvecFichierRIB>1|0</AvecFichierRIB><Extension>pdf</Extension>` (BIC et
+  Tire en majuscules) ; pour `Chèque`, seulement `<modeReglement>` ;
+- valeurs du mode : `Prélèvement`, `Chèque` (affiché « Autre moyen de paiement »).
+Tests : `tests/test_rib.py` (22 tests, IBAN d'exemple publics, aucun réseau).
 
 **Garde-fous** : simulation par défaut (la fiche est lue pour calculer le diff, rien n'est
 envoyé) ; `ED_ADMIN_DEMANDES_ACTIF=1` ; types autorisés `ED_ADMIN_DEMANDES_TYPES` ; code

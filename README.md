@@ -107,8 +107,23 @@ Une seule fois, dans le Terminal :
 
 Communs aux cinq : simulation par défaut, `confirm=True` seulement après accord explicite en
 conversation, activation par variable d'environnement (jamais sur Azure), journal local.
-**Jamais** de modification du mode de règlement ni des coordonnées bancaires (la demande
-correspondante du site renvoie l'IBAN complet) : ces données se saisissent dans Charlemagne.
+**Aucun outil MCP** ne touche au mode de règlement ni aux coordonnées bancaires : l'assistant ne
+doit jamais voir ni saisir un IBAN.
+
+### Mode de règlement / RIB : commande à lancer soi-même (30/09/2026)
+
+```bash
+.venv/bin/python -m ecoledirecte_admin_mcp.rib --compte <id> --etat          # mode actuel, IBAN masqué
+.venv/bin/python -m ecoledirecte_admin_mcp.rib --compte <id> --rib RIB.pdf   # passage / changement de prélèvement
+.venv/bin/python -m ecoledirecte_admin_mcp.rib --compte <id> --cheque        # passage au chèque
+```
+
+À lancer à la main dans un Terminal (refusée sinon) : l'IBAN (saisi deux fois, clé contrôlée) et
+le BIC sont tapés par la personne ; tout ce qui est affiché ou journalisé
+(`~/.ecoledirecte-admin-mcp/demandes_mode_reglement.csv`) est masqué (`FR76 •••• •••• 189`).
+Un nouvel IBAN exige le RIB (PDF/JPEG/PNG ≤ 5 Mo), comme sur le site. Récapitulatif, puis envoi en
+tapant `ENVOYER`. La demande est validée par le secrétariat dans Charlemagne (mandat SEPA pour un
+passage au prélèvement). Protocole : `docs/cartographie-api-admin.md` §9.
 
 #### `ed_admin_parametre_set`
 
