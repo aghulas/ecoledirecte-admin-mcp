@@ -63,8 +63,16 @@ def _norm(s: str) -> str:
 
 
 def _listes_autorisees() -> list[str]:
+    """Libellés (normalisés) et/ou numéros de listes autorisés, séparés par « | ».
+    Un numéro seul (ex. « 7 ») désigne la liste par son id, insensible aux fautes
+    de frappe du libellé ; il est conservé sous la forme « #7 »."""
     raw = os.environ.get("ED_ADMIN_DEPOT_LISTES", "Fiches Rentrée")
-    return [_norm(x) for x in raw.split("|") if x.strip()]
+    return [("#" + x.strip()) if x.strip().isdigit() else _norm(x) for x in raw.split("|") if x.strip()]
+
+
+def _liste_autorisee(liste: dict[str, Any]) -> bool:
+    autorisees = _listes_autorisees()
+    return _norm(liste.get("libelle", "")) in autorisees or f"#{liste.get('id')}" in autorisees
 
 
 def _depot_actif() -> bool:
@@ -139,6 +147,19 @@ class SessionFamille:
         t = resp.headers.get("X-Token") or (payload or {}).get("token")
         if t:
             self.token = t
+
+    async def appeler(self, chemin: str, verbe: str, data: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Appel de l'API famille (v3/<chemin>.awp?verbe=…), corps data=<JSON>."""
+        url = f"{WWW_API_BASE}{chemin}.awp?verbe={verbe}&v={WWW_API_VERSION}"
+        resp = await self.http.post(url, content=encode_form_data(data or {}),
+                                    headers={**self._headers(),
+                                             "Content-Type": "application/x-www-form-urlencoded"})
+        try:
+            payload = resp.json()
+        except ValueError as exc:
+            raise DepotError(f"{chemin} : réponse non JSON (HTTP {resp.status_code})") from exc
+        self._take_token(resp, payload)
+        return payload
 
     async def documents(self) -> dict[str, Any]:
         url = f"{WWW_API_BASE}familledocuments.awp?archive=&verbe=get&v={WWW_API_VERSION}"
@@ -222,8 +243,7 @@ def _trouver_liste(lp: dict[str, Any], id_eleve: int, id_compte: int | None = No
     """→ (liste, pièce, idPersonne). Listes autorisées seulement. Si une liste
     contient plusieurs pièces, `piece` (libellé) est obligatoire. Liste de type
     « F » (famille) : le dépôt se rattache au compte famille, sinon à l'élève."""
-    autorisees = _listes_autorisees()
-    listes = [l for l in lp.get("listesPieces", []) if _norm(l.get("libelle", "")) in autorisees]
+    listes = [l for l in lp.get("listesPieces", []) if _liste_autorisee(l)]
     if not listes:
         raise DepotError("Aucune liste de pièces autorisée visible pour cette famille.")
     candidats = []
@@ -256,12 +276,24 @@ def _depot_existant(lp: dict[str, Any], id_liste: int, id_piece: int, id_personn
                  and int(t.get("idPersonne", -1)) == int(id_personne)), None)
 
 
+def choisir_compte(res: dict[str, Any], compte_id: int | None) -> dict[str, Any]:
+    """Compte famille à utiliser : par défaut le responsable ; sinon `compte_id`,
+    qui doit être un compte rattaché à l'élève (jamais un compte quelconque)."""
+    if compte_id is None:
+        return res["compte"]
+    compte = next((c for c in res["comptes"] if int(c.get("id", -1)) == int(compte_id)), None)
+    if compte is None:
+        ids = ", ".join(f"{c['id']} ({c.get('type')})" for c in res["comptes"])
+        raise DepotError(f"Le compte {compte_id} n'est pas rattaché à cet élève (comptes possibles : {ids}).")
+    return compte
+
+
 async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool = False,
                         eleves: list | None = None, familles: list | None = None,
-                        piece: str | None = None) -> dict[str, Any]:
+                        piece: str | None = None, compte_id: int | None = None) -> dict[str, Any]:
     p = check_fichier(fichier)
     res = await resoudre_eleve_famille(admin_client, id_eleve, eleves, familles)
-    eleve, compte = res["eleve"], res["compte"]
+    eleve, compte = res["eleve"], choisir_compte(res, compte_id)
     apercu = {
         "eleve": f"{eleve['nom']} {eleve['prenom']} ({eleve.get('libelleClasse')}, id {eleve['id']})",
         "compte_famille": f"{compte.get('civilite','')} {compte['nom']} {compte['prenom']} (id {compte['id']}, {compte.get('type')})",
@@ -303,3 +335,38 @@ async def deposer_piece(admin_client, id_eleve: int, fichier: str, confirm: bool
                 "depot": {k: verif.get(k) for k in ("libelle", "date", "isLock")}}
     finally:
         await fam.http.aclose()
+
+
+# ----------------------------------------------------------------------
+# Lecture : état des pièces à verser d'une famille
+# ----------------------------------------------------------------------
+async def etat_pieces(admin_client, id_eleve: int, compte_id: int | None = None) -> dict[str, Any]:
+    """LECTURE — listes de pièces visibles dans l'espace d'une famille, avec pour
+    chaque pièce et chaque personne concernée l'état du dépôt (date, verrouillé
+    = récupéré par Charlemagne). Ouvre une supervision en lecture seule, ne
+    télécharge ni ne modifie aucun document."""
+    res = await resoudre_eleve_famille(admin_client, id_eleve)
+    compte = choisir_compte(res, compte_id)
+    fam = await ouvrir_supervision(admin_client, compte)
+    try:
+        lp = await fam.documents()
+    finally:
+        await fam.http.aclose()
+    noms = {int(x.get("id")): f"{x.get('prenom', '')} {x.get('nom', '')}".strip() for x in lp.get("personnes", [])}
+    listes = []
+    for liste in lp.get("listesPieces", []):
+        pieces = []
+        for pc in (x for x in lp.get("pieces", []) if x.get("idListePiece") == liste.get("id")):
+            etats = []
+            for pid in (liste.get("personnes") or []):
+                t = _depot_existant(lp, liste["id"], pc["id"], pid)
+                etats.append({"personne": noms.get(int(pid), str(pid)), "id_personne": pid,
+                              "depose": bool(t), **({"date": t.get("date"), "verrouille": t.get("isLock")} if t else {})})
+            pieces.append({"id": pc.get("id"), "libelle": pc.get("libelle"), "personnes": etats})
+        listes.append({"id": liste.get("id"), "libelle": liste.get("libelle"),
+                       "type": "famille" if liste.get("type") == "F" else "élève",
+                       "depot_autorise": _liste_autorisee(liste), "pieces": pieces})
+    return {"compte_famille": f"{compte.get('civilite', '')} {compte['nom']} {compte['prenom']} (id {compte['id']}, {compte.get('type')})".strip(),
+            "autres_comptes": [f"{c['id']} ({c.get('type')})" for c in res["comptes"] if c is not compte],
+            "listes": listes,
+            "note": "« verrouillé » = document récupéré par Charlemagne : il ne peut plus être remplacé par la famille."}

@@ -206,3 +206,35 @@ hors racine / traversée / non-PDF / faux PDF / trop gros refusés, écriture
 désactivée par défaut, liste non autorisée refusée, dépôt existant détecté,
 rapprochement (ambiguïté, doublon, nom non conforme), simulation sans
 supervision, `confirm=True` refusé si inactif.
+
+
+## 9. Écriture — exception n°3 : demandes de modification au nom des familles (30/09/2026)
+
+**Usage** : à la rentrée 2026, ~700 demandes (activités garderie/étude/cantine d'après les fiches
+forfaits, régime, reformatage des téléphones pour les SMS) envoyées par scripts
+(`~/dev/fiches-forfaits`), puis intégrées au connecteur (`demandes.py`).
+
+**Flux** (espace famille, via la supervision de §8) :
+1. `POST v3/famillecoordonnees.awp?verbe=get` → fiche : `eleves[]` (`activites[]` avec `code`,
+   `type`, `jour1..jour7` — jour1 = lundi, jour2 = mardi, jour4 = jeudi, jour5 = vendredi —,
+   `idRegime`), `responsable`, `conjoint`, adresse, situation familiale ;
+2. `POST v3/demandemodifications/coordonnees/<idCompte>.awp?verbe=get` → demandes en attente
+   (`data.eleves[].idEleve` pour les élèves, `data.id` pour les coordonnées) ;
+3. activités / régime : `POST v3/demandemodifications/eleve.awp?verbe=post`,
+   `data={"modifications": {"id", "idEtablissement", "prenom", "activites": [...], "idRegime"?}}`
+   — seules les activités modifiées sont envoyées ; la cantine a `type="Repas"` ;
+4. coordonnées : `POST v3/demandemodifications/coordonnees.awp?verbe=post`,
+   `data={"modifications": {"contenu": base64(<demandeModifications>…</demandeModifications>)}}`,
+   XML complet de la fiche dans l'ordre exact de `modifsToXml` du front (tous les champs recopiés).
+Les demandes apparaissent dans Charlemagne (« demandes de modification »), où le secrétariat les
+valide ; rien n'est écrit directement.
+
+**Non implémenté volontairement** : la demande « mode de règlement »
+(`<modeReglement><IBAN><BIC><Domiciliation><Tire>`) — l'IBAN complet est toujours renvoyé.
+
+**Garde-fous** : simulation par défaut (la fiche est lue pour calculer le diff, rien n'est
+envoyé) ; `ED_ADMIN_DEMANDES_ACTIF=1` ; types autorisés `ED_ADMIN_DEMANDES_TYPES` ; code
+d'activité présent sur la fiche de l'élève ou listé dans `ED_ADMIN_DEMANDES_ACTIVITES` ; jours
+limités à L/M/J/V ; refus si une demande est déjà en attente ; téléphones : seuls les numéros
+français reconnus sont reformatés, les autres sont signalés ; journal `demandes.csv`.
+**Tests** : `tests/test_demandes.py` (22 tests, aucun réseau).

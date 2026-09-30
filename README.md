@@ -79,6 +79,10 @@ Une seule fois, dans le Terminal :
 | `ed_admin_referentiels_get` | sanctions, catégories de suivi, tags CDT, salles… |
 | `ed_admin_activation_comptes(classe?, inclure_noms?)` | activation des comptes par classe : élèves sans aucun parent connecté, responsables jamais connectés, taux |
 | `ed_admin_parametre_set(libelle, valeur, confirm?)` | **ÉCRITURE** — modifie un paramètre établissement. Sans `confirm=True` : aperçu seulement, rien n'est écrit |
+| `ed_admin_deposer_piece(id_eleve, fichier, confirm?, piece?, compte_id?)` | **ÉCRITURE** — dépose un PDF dans une liste de pièces à verser, au nom de la famille (supervision). `compte_id` : compte parent précis |
+| `ed_admin_pieces_etat(id_eleve, compte_id?)` | état des pièces à verser d'une famille : déposé ou non, date, verrouillé (récupéré par Charlemagne), liste autorisée ou non |
+| `ed_admin_demande_activites(id_eleve, activites?, regime?, confirm?)` | **ÉCRITURE** — demande de modification des activités (jours L/M/J/V) et/ou du régime, validée ensuite dans Charlemagne |
+| `ed_admin_demande_telephones(compte_id, confirm?)` | **ÉCRITURE** — reformate les téléphones d'une famille (« 06 12 34 56 78 ») par demande de modification des coordonnées |
 
 ## Garde-fous (testés, `pytest`)
 
@@ -91,7 +95,21 @@ Une seule fois, dans le Terminal :
 - Paramètres ressemblant à des secrets (clés, certificats, mots de passe, IBAN…) masqués.
 - Aucun token ni mot de passe dans les messages d'erreur.
 
-### ⚠️ Écriture : `ed_admin_parametre_set` (seule exception, depuis v0.4)
+### ⚠️ Écriture : quatre outils seulement
+
+| Outil | Depuis | Activation | Détails |
+|---|---|---|---|
+| `ed_admin_parametre_set` | 16/09/2026 | toujours `confirm=True` | ci-dessous et `docs/cartographie-api-admin.md` §7 |
+| `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés et/ou numéros, ex. `1|2|7`) |
+| `ed_admin_demande_activites` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; types : `ED_ADMIN_DEMANDES_TYPES` ; codes : `ED_ADMIN_DEMANDES_ACTIVITES` |
+| `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
+
+Communs aux quatre : simulation par défaut, `confirm=True` seulement après accord explicite en
+conversation, activation par variable d'environnement (jamais sur Azure), journal local.
+**Jamais** de modification du mode de règlement ni des coordonnées bancaires (la demande
+correspondante du site renvoie l'IBAN complet) : ces données se saisissent dans Charlemagne.
+
+#### `ed_admin_parametre_set`
 
 - Modifie UN paramètre établissement (`POST parametres.awp?verbe=post`, même
   endpoint que l'interface admin elle-même). Détails techniques et méthode de
