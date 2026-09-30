@@ -226,6 +226,10 @@ forfaits, régime, reformatage des téléphones pour les SMS) envoyées par scri
 4. coordonnées : `POST v3/demandemodifications/coordonnees.awp?verbe=post`,
    `data={"modifications": {"contenu": base64(<demandeModifications>…</demandeModifications>)}}`,
    XML complet de la fiche dans l'ordre exact de `modifsToXml` du front (tous les champs recopiés).
+   Utilisé par `ed_admin_demande_telephones` (reformatage) et `ed_admin_demande_contacts`
+   (type `contacts` : `{"responsable.telMobile": …, "conjoint.mailPerso": …}` ; champs permis
+   mailPerso, mailTravail, telMobile, telTravail, telDomicile (responsable seulement) ; téléphone
+   français obligatoire, mail validé, jamais de valeur vide ; l'adresse n'est pas modifiable).
 Les demandes apparaissent dans Charlemagne (« demandes de modification »), où le secrétariat les
 valide ; rien n'est écrit directement.
 
@@ -237,4 +241,4 @@ envoyé) ; `ED_ADMIN_DEMANDES_ACTIF=1` ; types autorisés `ED_ADMIN_DEMANDES_TYP
 d'activité présent sur la fiche de l'élève ou listé dans `ED_ADMIN_DEMANDES_ACTIVITES` ; jours
 limités à L/M/J/V ; refus si une demande est déjà en attente ; téléphones : seuls les numéros
 français reconnus sont reformatés, les autres sont signalés ; journal `demandes.csv`.
-**Tests** : `tests/test_demandes.py` (22 tests, aucun réseau).
+**Tests** : `tests/test_demandes.py` (34 tests, aucun réseau).

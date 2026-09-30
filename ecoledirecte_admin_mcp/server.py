@@ -26,7 +26,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
-from .demandes import demande_activites, demande_telephones
+from .demandes import demande_activites, demande_contacts, demande_telephones
 from .depot_pieces import deposer_piece, etat_pieces
 
 mcp = MCPServer(
@@ -238,7 +238,7 @@ async def ed_admin_deposer_piece(id_eleve: int, fichier: str, confirm: bool = Fa
                                  verifier: bool = True) -> Any:
     """ÉCRITURE — dépose UN PDF dans la liste de pièces à verser d'un élève
     (ex. « Fiches Rentrée »), à la place de la famille, via la supervision admin.
-    L'un des quatre seuls outils d'écriture de ce connecteur.
+    L'un des cinq seuls outils d'écriture de ce connecteur.
 
     Sans confirm=True (par défaut) : SIMULATION — vérifie le fichier et retrouve
     l'élève et le compte famille, sans rien envoyer. Avec verifier=True (défaut
@@ -321,3 +321,27 @@ async def ed_admin_demande_telephones(compte_id: int, confirm: bool = False) -> 
     autorisé, refus si une demande de coordonnées est déjà en attente, journal.
     `compte_id` = id du compte famille (ed_admin_familles_search)."""
     return await demande_telephones(_get_client(), compte_id, confirm)
+
+
+@mcp.tool()
+async def ed_admin_demande_contacts(compte_id: int, modifications: dict[str, str],
+                                    confirm: bool = False) -> Any:
+    """ÉCRITURE — envoie, au nom de la famille, une DEMANDE de modification des
+    mails et/ou téléphones des parents, comme le formulaire de l'espace famille.
+    La demande arrive dans Charlemagne, où le secrétariat la valide.
+
+    `modifications` = {"<bloc>.<champ>": valeur}, bloc = responsable ou conjoint,
+    champ parmi mailPerso, mailTravail, telMobile, telTravail, telDomicile
+    (telDomicile : responsable seulement). Ex. {"responsable.telMobile":
+    "0612345678", "conjoint.mailPerso": "prenom.nom@example.org"}. Les téléphones
+    sont mis au format « 06 12 34 56 78 » ; seuls les numéros français sont
+    acceptés. Tous les autres champs (adresse, autres mails et téléphones,
+    profession…) sont renvoyés à l'identique. Pas de valeur vide.
+
+    Sans confirm=True (par défaut) : SIMULATION (la fiche est lue, avant → après
+    affiché, rien n'est envoyé). Il faut TOUJOURS obtenir l'accord explicite de
+    l'utilisateur avant confirm=True. Garde-fous : ED_ADMIN_DEMANDES_ACTIF=1, type
+    « contacts » autorisé (ED_ADMIN_DEMANDES_TYPES), refus si une demande de
+    coordonnées est déjà en attente, journal. JAMAIS de coordonnées bancaires.
+    `compte_id` = id du compte famille (ed_admin_familles_search)."""
+    return await demande_contacts(_get_client(), compte_id, modifications, confirm)
