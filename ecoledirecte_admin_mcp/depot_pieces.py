@@ -115,9 +115,18 @@ def check_fichier(fichier: str) -> Path:
     size = p.stat().st_size
     if size == 0 or size > MAX_BYTES:
         raise DepotError(f"Taille de fichier refusée ({size} octets).")
-    with p.open("rb") as fh:
-        if fh.read(5) != b"%PDF-":
-            raise DepotError("Le fichier n'est pas un PDF valide (en-tête %PDF absent).")
+    try:
+        with p.open("rb") as fh:
+            entete = fh.read(5)
+    except OSError as exc:
+        # Cas vu le 30/09/2026 : fichier OneDrive « en ligne uniquement » (dataless) que
+        # OneDrive n'arrive pas à télécharger → TimeoutError sans message côté outil.
+        raise DepotError(f"Lecture impossible de {p.name} ({exc.strerror or type(exc).__name__}) : "
+                         "fichier OneDrive probablement « en ligne uniquement » et non téléchargé. "
+                         "Vérifier OneDrive (connexion, pause) ou choisir « Toujours conserver sur "
+                         "cet appareil » sur le dossier.") from exc
+    if entete != b"%PDF-":
+        raise DepotError("Le fichier n'est pas un PDF valide (en-tête %PDF absent).")
     return p
 
 
