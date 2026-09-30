@@ -71,7 +71,9 @@ Une seule fois, dans le Terminal :
 | `ed_admin_eleves_search(nom)` | élèves + classe |
 | `ed_admin_professeurs_list`, `ed_admin_personnels_list` | comptes profs / personnels |
 | `ed_admin_entreprises_search(nom)` | tuteurs/entreprises |
-| `ed_admin_parametres_get(libelles)` | valeurs de paramètres (secrets masqués) |
+| `ed_admin_parametres_get(libelles, hors_catalogue?)` | valeurs de paramètres avec intitulé, menu et rubrique (secrets masqués, base64 décodé) ; libellé inconnu du catalogue refusé avec suggestions |
+| `ed_admin_parametres_catalogue(menu?, rubrique?, recherche?)` | catalogue hors ligne des ~650 paramètres de l'admin (sommaire sans filtre) |
+| `ed_admin_parametrage_lire(menu, rubrique?)` | valeurs actuelles de toute une rubrique ou tout un menu de l'admin, d'un coup |
 | `ed_admin_stats_connexions` | connexions par profil et période |
 | `ed_admin_synchros_etat` | derniers transferts Charlemagne → ED |
 | `ed_admin_connecteurs_list` | applis partenaires activées |
@@ -124,6 +126,35 @@ le BIC sont tapés par la personne ; tout ce qui est affiché ou journalisé
 Un nouvel IBAN exige le RIB (PDF/JPEG/PNG ≤ 5 Mo), comme sur le site. Récapitulatif, puis envoi en
 tapant `ENVOYER`. La demande est validée par le secrétariat dans Charlemagne (mandat SEPA pour un
 passage au prélèvement). Protocole : `docs/cartographie-api-admin.md` §9.
+
+#### Catalogue des paramètres (v0.5)
+
+`GET parametres` renvoie « 0 » **sans erreur** pour un libellé qui n'existe pas
+(vérifié le 30/09/2026 : `Zzz/Inexistant/Actif` → `"0"`). Une faute de frappe ou
+un accent manquant donne donc une valeur plausible mais fausse. Le catalogue
+`ecoledirecte_admin_mcp/data/parametres_front.json` (~650 libellés + 26 motifs
+dynamiques), relevé dans le JavaScript public du front admin, sert à :
+
+- refuser en lecture (`ed_admin_parametres_get`) et en écriture
+  (`ed_admin_parametre_set`, avant tout appel réseau) les libellés inconnus, avec
+  suggestions (`Sites/Eleves/Actif` → `Sites/Elèves/Actif`) ;
+- donner à chaque paramètre un intitulé et son emplacement dans l'admin
+  (menu « Paramétrages généraux / familles / élèves / professeurs / personnels /
+  entreprises » › rubrique), pour lire une rubrique entière
+  (`ed_admin_parametrage_lire`) ;
+- décoder / encoder les valeurs stockées en base64 (adresse et présentation de la
+  page contact, textes des pré-inscriptions).
+
+`certain: false` marque les libellés que le front construit pour plusieurs
+profils (`"Sites/" + realTypeUser + ...`) : ils peuvent ne pas exister pour l'un
+d'eux. Les indices d'établissement sont ramenés à `Etablissement_0`.
+
+Régénérer après une évolution de l'admin EcoleDirecte :
+
+```bash
+./.venv/bin/python tools/extraire_parametres.py            # télécharge le bundle courant
+./.venv/bin/python tools/extraire_parametres.py --bundle scripts.js
+```
 
 #### `ed_admin_parametre_set`
 

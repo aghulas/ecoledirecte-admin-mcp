@@ -1,0 +1,4086 @@
+{
+ "source": "scripts/scripts.41ac2ecf.js",
+ "date_extraction": "2026-09-30",
+ "nb_libelles": 650,
+ "libelles": {
+  "Administrateur/Alertes/Erreurs/Email": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Administrateur/Alertes/Erreurs/SMS": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Administrateur/Alertes/Transferts/Email": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Administrateur/Alertes/Transferts/SMS": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Administrateur/Alertes/Warnings/Email": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Administrateur/Alertes/Warnings/SMS": {
+   "controleurs": [
+    "AlertesTransfertsCtrl"
+   ],
+   "certain": true
+  },
+  "Africa/Casablanca (UTC+0)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Africa/Dakar (UTC+0)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "America/Cayenne (UTC-3)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "America/Guadeloupe (UTC-4)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "America/Martinique (UTC-4)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Autorisations/SMS": {
+   "controleurs": [
+    "AdministratifFamilleCtrl",
+    "AlertesTransfertsCtrl",
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl",
+    "ComptabiliteFamilleCtrl",
+    "MotspasseUtilisateursCtrl",
+    "QuestionnairesCtrl"
+   ],
+   "certain": true
+  },
+  "ConfigSMS/Alertes/Factures/HeureMax": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "ConfigSMS/Alertes/Factures/HeureMin": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "ENT/Date/Purge": {
+   "controleurs": [
+    "EntAdministrationCtrl"
+   ],
+   "certain": true
+  },
+  "Europe/Paris (UTC+1)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "FeuilleAppel/AppelEtude/Etablissement_0/Salles": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": true
+  },
+  "Indian/Reunion (UTC+4)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Actif": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-Admin": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-Elv": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-Entreprise": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-EspTravail": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-Fam": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Admin-Prof": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/BlackListProf": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Elv-Admin": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Elv-Entreprise": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Elv-EspTravail": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Elv-Prof": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Entreprise-Admin": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Entreprise-Elv": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Entreprise-Fam": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Entreprise-Prof": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Fam-Admin": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Fam-Entreprise": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Fam-EspTravail": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Fam-Prof": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/NomENT/FamillesEleves": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/NomENT/Professeurs": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/NotificationEmail": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/NotificationEmailAvecContenu": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/ParentsMessagesEnfants": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-Admin": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-Elv": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-Entreprise": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-EspTravail": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-Fam": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/Prof-Prof": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/RechercheParClasse/Professeurs": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/URLENT/FamillesEleves": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "Messagerie/Etablissement_0/URLENT/Professeurs": {
+   "controleurs": [
+    "MessagerieCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Actif": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/CahierDeTexte/Etablissement_0/Actif": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-Admin": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-Elv": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-Entreprise": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-EspTravail": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-Fam": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Admin-Prof": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Elv-Admin": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Elv-Entreprise": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Elv-EspTravail": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Elv-Prof": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Entreprise-Admin": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Entreprise-Elv": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Entreprise-Fam": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Entreprise-Prof": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Fam-Admin": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Fam-Entreprise": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Fam-EspTravail": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Fam-Prof": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-Admin": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-Elv": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-Entreprise": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-EspTravail": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-Fam": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Messagerie/Etablissement_0/Prof-Prof": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/MessagerieFE/Etablissement_0/Actif": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/MessagerieFEToAll/Etablissement_0/Actif": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "ModeRestreint/Notes/Etablissement_0/Actif": {
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ],
+   "certain": true
+  },
+  "OuiPass/Actif": {
+   "controleurs": [
+    "OuiPassCtrl"
+   ],
+   "certain": true
+  },
+  "Pacific/Gambier (UTC-9)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Pacific/Marquesas (UTC-9:30)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Pacific/Tahiti (UTC-10)": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "PackIA/Actif": {
+   "controleurs": [
+    "PackIACtrl"
+   ],
+   "certain": true
+  },
+  "PackIA/FeedbackClient": {
+   "controleurs": [
+    "PackIACtrl"
+   ],
+   "certain": true
+  },
+  "Site/Reglement/Date/MigrationDatasV2": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Site/Reglement/Date/MigrationV2": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Site/Reglement/Devise": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Site/Reglement/Version/Api": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/2FATOTP/A/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/2FATOTP/F/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/2FATOTP/P/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/2FATOTP/T/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Admin/3DSecure/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Agenda/Etablissement_0/Couleur": {
+   "controleurs": [
+    "AgendaCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/BlocageCompte/NbTentativesMaxAtteinte/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/CharteUtilisation/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/CharteUtilisation/Contenu": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteur/RobertDicoEnLigne/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/ARBS/0/RNE": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/ARBS/APIKey": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/ARBS/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica Image Quest/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica Image Quest/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica Image Quest/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica Image Quest/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica School/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica School/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica School/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Britannica School/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CNS/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CNS/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CNS/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CRISTALWEB/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CRISTALWEB/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/CRISTALWEB/APIKey": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EC/0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDUCARTE/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDUCARTE/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDUCARTE/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDULIB/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDULIB/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/EDULIB/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Encyclopaedia Universalis/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Encyclopaedia Universalis/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Encyclopaedia Universalis/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Encyclopaedia Universalis/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/GEN5/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/GEN5/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/GEN5/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/KNE/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/KNE/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/KNE/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/LESITETV/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/LESITETV/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/LESITETV/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/MANUELSPEARLTREES/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/MANUELSPEARLTREES/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/MANUELSPEARLTREES/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/TABULEO/0/RNE": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/TABULEO/APIKey": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/TABULEO/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Ecole/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Ecole/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Ecole/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Ecole/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Junior/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Junior/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Junior/Elèves/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/Universalis Junior/Professeurs/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/VOLTAIRE/0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/VOLTAIRE/0/RNE": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/VOLTAIRE/0/Tested": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/lelivrescolaire/0/Actif": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/lelivrescolaire/0/RNE": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Connecteurs/lelivrescolaire/0/Tested": {
+   "controleurs": [
+    "ManuelsScolairesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/DateFinModeEte": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/DateFinModeEteProf": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/EDFORMS/Personnels/Actif": {
+   "controleurs": [
+    "QuestionnairesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/EDFORMS/Personnels/Signature/Actif": {
+   "controleurs": [
+    "QuestionnairesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/EDFORMS/Professeurs/Actif": {
+   "controleurs": [
+    "QuestionnairesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/EDFORMS/Professeurs/Signature/Actif": {
+   "controleurs": [
+    "QuestionnairesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Comptabilite/Etablissement_0/PortesMonaie/Actif": {
+   "controleurs": [
+    "ComptabiliteEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/ConnecteurEduMalin/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/ConnecteurEduMalin/Etablissement_0/URL": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/ConnecteurONISEPServices/0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/EmargementCFA/Actif": {
+   "controleurs": [
+    "EmargementEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/EmploisDuTemps/Etablissement_0/DisplayTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/EmploisDuTemps/Etablissement_0/LibelleTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/CompNumeriques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/AvecDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/EvaluationsComposantesActif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/Graphiques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/Graphiques/ModeCalcul": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/NbreJoursDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/OngletCompetences": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LSUN/Etablissement_0/LSUN/PositionMatiere": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/LivretApprentissage/Actif": {
+   "controleurs": [
+    "LivretApprentissageEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/AvecDécalageConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/ChefEtablissement": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/ClasseGroupe": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/MentionDuConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/ProfesseurPrincipal": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/Professeurs": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/PériodesCloturées": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Appréciations/VieScolaire": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/Actif": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/AvecDécalageConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/CoefMatière": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/Graphique": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/HorsPériode": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/MoyenneClasse": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/MoyenneElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/MoyenneGénérale": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/MoyenneMax": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/MoyenneMin": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/PériodesAnnée": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/PériodesCloturées": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/PériodesRelevé": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Moyennes/RangElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/Actif": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/AvecDécalage": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/CoefMatière": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/CoefNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/DateNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/GrasAuDessusMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/GrasSousMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/HorsPériode": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/LibelléNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/MoyenneDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/Moyennes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/NbreJoursDécalage": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/PériodesAnnée": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/PériodesCloturées": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/PériodesRelevé": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/Notes/Etablissement_0/Notes/TypeDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/SuiviStages/Actif": {
+   "controleurs": [
+    "SuiviStageEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/SuiviStages/ActiverRecherche": {
+   "controleurs": [
+    "SuiviStageEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/SuiviStages/AfficherCompteRenduVisite": {
+   "controleurs": [
+    "SuiviStageEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Absences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Actif": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/AfficherPermisPoint": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/CommentaireAbsences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/CommentaireEncouragement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/CommentaireRetards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/CommentaireSanction": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/DemandesExceptionnelles": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/DemandesExceptionnellesJourJ": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Dispenses": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/EmploisDuTemps": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Encouragements": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/EncouragéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Retards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/SanctionnéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/Sanctions": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Eleves/VieScolaire/Etablissement_0/SuiviComportement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/CahierLiaison/Etablissement_0/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/CarnetCorrespondance/Etablissement_0/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Actif": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Collabora/Actif": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Collabora/FormatFichiers": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Collabora/FormatFichiers/ChoixLibre": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Pads/Actif": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Quota": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/Cloud/Etablissement_0/Visios/AccesElargi/Actif": {
+   "controleurs": [
+    "EntCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/JournalDeClasse/Etablissement_0/Actif": {
+   "controleurs": [
+    "JournalClasseFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/JournalDeClasse/Etablissement_0/Commentaires": {
+   "controleurs": [
+    "JournalClasseFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/VieScolaire/Etablissement_0/Blog": {
+   "controleurs": [
+    "CdtFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Elèves/VieScolaire/Etablissement_0/CahierDeTexte": {
+   "controleurs": [
+    "CdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Elèves/VieScolaire/Etablissement_0/CahierDeTexteCompteRendu": {
+   "controleurs": [
+    "CdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Entreprises/CoordonneesEleve/Actif": {
+   "controleurs": [
+    "AdministratifEntrepriseCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Entreprises/CoordonneesFamille/Actif": {
+   "controleurs": [
+    "AdministratifEntrepriseCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Entreprises/EmploisDuTemps/Etablissement_0/DisplayTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/EmploisDuTemps/Etablissement_0/LibelleTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/CompNumeriques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/AvecDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/EvaluationsComposantesActif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/Graphiques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/Graphiques/ModeCalcul": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/NbreJoursDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/OngletCompetences": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LSUN/Etablissement_0/LSUN/PositionMatiere": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/LivretApprentissage/Actif": {
+   "controleurs": [
+    "LivretApprentissageEntrepriseCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/AvecDécalageConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/ChefEtablissement": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/ClasseGroupe": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/MentionDuConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/ProfesseurPrincipal": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/Professeurs": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/PériodesCloturées": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Appréciations/VieScolaire": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/Actif": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/AvecDécalageConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/CoefMatière": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/Graphique": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/HorsPériode": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/MoyenneClasse": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/MoyenneElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/MoyenneGénérale": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/MoyenneMax": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/MoyenneMin": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/PériodesAnnée": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/PériodesCloturées": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/PériodesRelevé": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Moyennes/RangElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/Actif": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/AvecDécalage": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/CoefMatière": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/CoefNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/DateNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/GrasAuDessusMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/GrasSousMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/HorsPériode": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/LibelléNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/MoyenneDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/Moyennes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/NbreJoursDécalage": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/PériodesAnnée": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/PériodesCloturées": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/PériodesRelevé": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/Notes/Etablissement_0/Notes/TypeDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Absences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Actif": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/AfficherPermisPoint": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/CommentaireAbsences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/CommentaireEncouragement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/CommentaireRetards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/CommentaireSanction": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/DemandesExceptionnelles": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/DemandesExceptionnellesJourJ": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Dispenses": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/EmploisDuTemps": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Encouragements": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/EncouragéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Retards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/SanctionnéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/Sanctions": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Entreprises/VieScolaire/Etablissement_0/SuiviComportement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/EtabNonFr": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CahierLiaison/Etablissement_0/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/CahierLiaison/Etablissement_0/TypesCorrespondanceLiaison": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/DestA": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/DestP": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/DestPP": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/EcrireActif": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/CarnetCorrespondance/Etablissement_0/TypesCorrespondance": {
+   "controleurs": [
+    "CarnetCorrespondanceFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/Actif": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/ModeDeReglement": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/PortesMonaie/Actif": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Actif": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Banque": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/CertificatProduction": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/CertificatTest": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/CodeSociété": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Cryptage": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Environnement": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Libelle/SoldeCrediteur": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/Libelle/SoldeDebiteur": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/MontantMinimum": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/NoTPE": {
+   "controleurs": [
+    "ReglementsEnLigneCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Comptabilité/RèglementsEnLigne/SoldeCréditeur": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurARD/Etablissement_0/Adultes/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurARD/Etablissement_0/Eleves/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurARD/Etablissement_0/Familles/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurAlise/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurCATER/Etablissement_0/ACIAService": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurCATER/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurCATER/Etablissement_0/Domaine": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurCATER/Etablissement_0/IdDossierAcia": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEdunao/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEdunao/Etablissement_0/EdunaoAPIKey": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEdunao/Etablissement_0/Url": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEsidoc/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEsidoc/Etablissement_0/Domaine": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEsidoc/Etablissement_0/Libelle": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEsidoc/Etablissement_0/NombrePortailsSupplementaires": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurEsidoc/Etablissement_0/SSO": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurScolaConcept/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ConnecteurScolaConcept/Etablissement_0/Url": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Coordonnees/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Coordonnees/Aide": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Coordonnees/Etablissement_0/AuthentificationSMS": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/Administratifs": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/Entreprise": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/Factures": {
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/InsReins": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/Notes": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/NotificationEmail": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Documents/Etablissement_0/VS": {
+   "controleurs": [
+    "DocumentsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/EmploisDuTemps/Etablissement_0/DisplayTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/EmploisDuTemps/Etablissement_0/LibelleTrous": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/JournalDeClasse/Etablissement_0/Actif": {
+   "controleurs": [
+    "JournalClasseFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/JournalDeClasse/Etablissement_0/Commentaires": {
+   "controleurs": [
+    "JournalClasseFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/CompNumeriques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/AvecDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/EvaluationsComposantesActif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/Graphiques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/Graphiques/ModeCalcul": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/NbreJoursDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/OngletCompetences": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/LSUN/Etablissement_0/LSUN/PositionMatiere": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Aide": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/DateDebut": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/DateFin": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Etablissement_0/Activites/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Etablissement_0/Regime/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Etablissement_0/RestaurationMidi/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/ModificationsRentreeEleve/Etablissement_0/RestaurationSoir/Actif": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/AvecDécalageConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/ChefEtablissement": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/ClasseGroupe": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/MentionDuConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/ProfesseurPrincipal": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/Professeurs": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/PériodesCloturées": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Appréciations/VieScolaire": {
+   "controleurs": [
+    "AppreciationsFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/Actif": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/AvecDécalageConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/CoefMatière": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/Graphique": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/HorsPériode": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/MoyenneClasse": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/MoyenneElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/MoyenneGénérale": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/MoyenneMax": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/MoyenneMin": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/NbreJoursAprèsDateConseil": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/PériodesAnnée": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/PériodesCloturées": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/PériodesRelevé": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Moyennes/RangElève": {
+   "controleurs": [
+    "MoyennesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/Actif": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/AvecDécalage": {
+   "controleurs": [
+    "LSUNCompetencesFamillesElevesCtrl",
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/CoefMatière": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/CoefNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/DateNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/GrasAuDessusMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/GrasSousMoyenne": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/HorsPériode": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/LibelléNotes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/MoyenneDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/Moyennes": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/NbreJoursDécalage": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/PériodesAnnée": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/PériodesCloturées": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/PériodesRelevé": {
+   "controleurs": [
+    "NotesPeriodesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/Notes/Etablissement_0/Notes/TypeDevoir": {
+   "controleurs": [
+    "NotesFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Adresse": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true,
+   "base64": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Contact": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Email": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Logo": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/NomEtablissement": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Photo1": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Photo2": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Photo3": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Photo4": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Photo5": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Présentation": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true,
+   "base64": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Site": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/PageDeGarde/Etablissement_0/Téléphone": {
+   "controleurs": [
+    "PageContactCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/SuiviStages/Etablissement_0/Actif": {
+   "controleurs": [
+    "SuiviStageFamillesEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/SuiviStages/Etablissement_0/AfficherCompteRenduVisite": {
+   "controleurs": [
+    "SuiviStageFamillesEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Absences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Actif": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/AfficherPermisPoint": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CahierDeTexte": {
+   "controleurs": [
+    "CdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CahierDeTexteCompteRendu": {
+   "controleurs": [
+    "CdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CommentaireAbsences": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CommentaireEncouragement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CommentaireRetards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/CommentaireSanction": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/DemandesExceptionnelles": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/DemandesExceptionnellesJourJ": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Dispenses": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/EmploisDuTemps": {
+   "controleurs": [
+    "EdtFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Encouragements": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/EncouragéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/JustificationEnLigne": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Retards": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/SanctionnéPar": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/Sanctions": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Familles/VieScolaire/Etablissement_0/SuiviComportement": {
+   "controleurs": [
+    "ViescolaireFamillesElevesCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/FuseauHoraire": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Annees/n0": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Annees/n1": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Annees/n2": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Annees/n3": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/CSPObligatoire": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/ContenuMail": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true,
+   "base64": true
+  },
+  "Sites/Inscriptions/Entete": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true,
+   "base64": true
+  },
+  "Sites/Inscriptions/Particule": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/RegimeObligatoire": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/SepareurTelephone": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Inscriptions/Titre": {
+   "controleurs": [
+    "SitePreinscriptionsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/MDPPerduSMS": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Mobiles/CarteCantine/Actif": {
+   "controleurs": [
+    "BadgeEleveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Mobiles/CarteCantine_A/Actif": {
+   "controleurs": [
+    "BadgePersonnelsCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Mobiles/CarteCantine_P/Actif": {
+   "controleurs": [
+    "BadgeProfesseursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Mobiles/QRCode/Actif": {
+   "controleurs": [
+    "BadgeEleveCtrl",
+    "BadgePersonnelsCtrl",
+    "BadgeProfesseursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/NiveauMDPAutorisé": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Notification/Connexion/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Notification/Connexion/Auth2FactorFE/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/OuiPass/Etablissement_0/Actif": {
+   "controleurs": [
+    "OuiPassCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Paramétrage/AssociationComptes": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Paramétrage/ConjointsAutorisés": {
+   "controleurs": [
+    "AdministratifFamilleCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Paramétrage/NombreAgenda": {
+   "controleurs": [
+    "AgendaCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Paramétrage/NombrePostit": {
+   "controleurs": [
+    "AgendaCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Paramétrage/ParamétrageParEtablissement": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CahierLiaison/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CahierLiaison/TypesCorrespondanceLiaison": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/DemandeIncidentActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/DemandeSanctionActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/DemandeSignatureActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/SaisieCorrespondanceActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/Suivi/SeulPPAuteurModifiable": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/SuiviActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetCorrespondance/TypesCorrespondance": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/CoefMatiere": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/Graphique": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/MoyenneClasse": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/MoyenneGenerale": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/MoyenneMax": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/MoyenneMin": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/MoyennesSimulation": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/CarnetDeNotes/Moyennes/RangEleve": {
+   "controleurs": [
+    "NotesPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/Comptabilité/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/Comptabilité/PortesMonaie/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/Comptabilité/RèglementsEnLigne/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/EmploiDuTemps/ReservationSalles/Actif": {
+   "controleurs": [
+    "EdtPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/FeuilleAppel/Actif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/AppelEtudeActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/AppelPrimaireActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/DeclarationRetard": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/EmploiDuTemps": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/RechercheParClasse": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/SuiviMsgED": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/SuiviMsgEDActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/SuiviSms": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/FeuilleAppel/SuiviSmsActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Personnels/RDVPP/Actif": {
+   "controleurs": [
+    "AdministratifPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/RDVPP/Individuel/Actif": {
+   "controleurs": [
+    "AdministratifPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Personnels/Visio/Exterieure/Actif": {
+   "controleurs": [
+    "AdministratifPersonnelCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Actif": {
+   "controleurs": [
+    "AccesSitesCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/Actif": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/Archives": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/CompteRenduSeancePrevisionnel": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/DonnéLeModifiable": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/EmploiDuTemps": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/GestionCorrespondances": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTexte/LienBiblioManuel": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTextePrimaire/Actif": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTextePrimaire/SaisieCompteRendu": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierDeTextePrimaire/SaisieSimplifiee": {
+   "controleurs": [
+    "CdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Actif": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Jeudi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Lundi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Mardi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Mercredi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Samedi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierJournal/Vendredi": {
+   "controleurs": [
+    "CahierJournalProfesseurCtrl",
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CahierLiaison/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CahierLiaison/TypesCorrespondanceLiaison": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/Actif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/DemandeIncidentActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/DemandeSanctionActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/DemandeSignatureActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/SaisieCorrespondanceActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/Suivi/SeulPPAuteurModifiable": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/SuiviActif": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetCorrespondance/TypesCorrespondance": {
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/CarnetDeNotes/Actif": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/CoefMatiere": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/Graphique": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/MoyenneClasse": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/MoyenneGenerale": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/MoyenneMax": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/MoyenneMin": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/MoyennesSimulation": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/Moyennes/RangEleve": {
+   "controleurs": [
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/PPmodifTout": {
+   "controleurs": [
+    "AppreciationsProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/PPmodifVS": {
+   "controleurs": [
+    "AppreciationsProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/saisieAppClasse": {
+   "controleurs": [
+    "AppreciationsProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CarnetDeNotes/seulPPVoieToutesLesNotes": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl",
+    "NotesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Comptabilité/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/Comptabilité/PortesMonaie/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/Comptabilité/RèglementsEnLigne/Actif": {
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/ConnecteurSacoche/0/SacocheAPIKey": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/ConnecteurSacoche/Etablissement_0/Actif": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/ConnecteurSacoche/Etablissement_0/Url": {
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/ConseilDeClasse/blocageSaisieAppreciation/actif": {
+   "controleurs": [
+    "AppreciationsProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/ConseilDeClasse/blocageSaisieAppreciation/nbj": {
+   "controleurs": [
+    "AppreciationsProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Consultation/CoordonneesEnseignant/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Consultation/EmploiDuTempsEnseignant/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CoordonneesEleve/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CoordonneesElevePP/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CoordonneesFamille/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/CoordonneesFamillePP/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Dispositifs/Actif": {
+   "controleurs": [
+    "AdministratifPersonnelCtrl",
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Dispositifs/SaisiePrimaire/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/EmargementCFA/Actif": {
+   "controleurs": [
+    "EmargementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/EmploiDuTemps/Actif": {
+   "controleurs": [
+    "EdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/EmploiDuTemps/ReservationSalles/Actif": {
+   "controleurs": [
+    "EdtProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/FeuilleAppel/Actif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/AppelEtudeActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/AppelPrimaireActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/DeclarationRetard": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/EmploiDuTemps": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/RechercheParClasse": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/SuiviMsgED": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/SuiviMsgEDActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/SuiviSms": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/FeuilleAppel/SuiviSmsActif": {
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ],
+   "certain": false
+  },
+  "Sites/Professeurs/LSL/Actif": {
+   "controleurs": [
+    "LSLCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSL/SaisieAvisCESeulementParPersonnel": {
+   "controleurs": [
+    "LSLCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSL/SaisieAvisPPSeulement": {
+   "controleurs": [
+    "LSLCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/Actif": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/ChoixCycleCatalogue": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/CompNumeriques/Actif": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/CompNumeriques/LibelleEval1": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/CompNumeriques/LibelleEval2": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/CompNumeriques/LibelleEval3": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/CompNumeriques/TypeAffectationProf": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/ConversionEvalNotes": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LSUN/Edition1D/Actif": {
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/LivretApprentissage/Actif": {
+   "controleurs": [
+    "LivretApprentissageProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Montessori/Actif": {
+   "controleurs": [
+    "MontessoriProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Montessori/ReferentielImporte": {
+   "controleurs": [
+    "MontessoriProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/RDVPP/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/RDVPP/Individuel/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/0/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/1/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/1/Couleur": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/1/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/2/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/2/Couleur": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/2/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/3/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/3/Couleur": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/3/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/4/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/4/Couleur": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/4/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/5/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/5/Couleur": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/5/Libelle": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviComportement/Actif": {
+   "controleurs": [
+    "SuiviComportementProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviStages/Actif": {
+   "controleurs": [
+    "SuiviStageProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviStages/AfficherLeSuivi": {
+   "controleurs": [
+    "SuiviStageProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/SuiviStages/AfficherLesEvaluations": {
+   "controleurs": [
+    "SuiviStageProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/Professeurs/Visio/Exterieure/Actif": {
+   "controleurs": [
+    "AdministratifProfesseurCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/ValiditeMDP/Actif": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  },
+  "Sites/ValiditeMDP/NbJours": {
+   "controleurs": [
+    "MotspasseUtilisateursCtrl"
+   ],
+   "certain": true
+  }
+ },
+ "motifs": [
+  {
+   "motif": "ENT/{typeEspaceT}/Agenda/Actif",
+   "controleurs": [
+    "EntCtrl"
+   ]
+  },
+  {
+   "motif": "ENT/{typeEspaceT}/Cloud/Actif",
+   "controleurs": [
+    "EntCtrl"
+   ]
+  },
+  {
+   "motif": "ENT/{typeEspaceT}/Date/DerniereGeneration",
+   "controleurs": [
+    "EntCtrl"
+   ]
+  },
+  {
+   "motif": "ENT/{typeEspaceT}/Discussion/Actif",
+   "controleurs": [
+    "EntCtrl"
+   ]
+  },
+  {
+   "motif": "ENT/{typeEspaceT}/DroitsMembres",
+   "controleurs": [
+    "EntCtrl"
+   ]
+  },
+  {
+   "motif": "ModeRestreint/PeriodesModeNormal_{jour}_a",
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ]
+  },
+  {
+   "motif": "ModeRestreint/PeriodesModeNormal_{jour}_de",
+   "controleurs": [
+    "ModeRestreintCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Eleves/Comptabilite/Etablissement_0/PortesMonaie/Affichage/{code}",
+   "controleurs": [
+    "ComptabiliteEleveCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Familles/Comptabilité/PortesMonaie/Affichage/{code}",
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Familles/Comptabilité/PortesMonaie/Payable/{code}",
+   "controleurs": [
+    "ComptabiliteFamilleCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Familles/ConnecteursEsidoc_{i}/Etablissement_0/Actif",
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Familles/ConnecteursEsidoc_{i}/Etablissement_0/Domaine",
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Familles/ConnecteursEsidoc_{i}/Etablissement_0/Libelle",
+   "controleurs": [
+    "ConnecteurDetailDirectiveCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Personnels/CarnetCorrespondance/TypesSanction/{id}/Actif",
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Personnels/Comptabilité/PortesMonaie/Affichage/{code}",
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Personnels/Comptabilité/PortesMonaie/Payable/{code}",
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Personnels/FeuilleAppel/Activites/ApresMidi/{code}",
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Personnels/FeuilleAppel/Activites/Matin/{code}",
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/CarnetCorrespondance/TypesSanction/{id}/Actif",
+   "controleurs": [
+    "CarnetCorrespondanceProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/Comptabilité/PortesMonaie/Affichage/{code}",
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/Comptabilité/PortesMonaie/Payable/{code}",
+   "controleurs": [
+    "FinancesProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/EmploiDuTemps/ReservationSalles/{id}/Actif",
+   "controleurs": [
+    "EdtProfesseurCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/FeuilleAppel/Activites/ApresMidi/{code}",
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/FeuilleAppel/Activites/Matin/{code}",
+   "controleurs": [
+    "AppelProfesseursPersonnelsCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/LSUN/CompNumeriques/Classe/{idClasse}/Prof/{idProf}",
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ]
+  },
+  {
+   "motif": "Sites/Professeurs/LSUN/CompNumeriques/Classe/{id}/Prof/{idProf}",
+   "controleurs": [
+    "LSUNCompetencesProfesseurCtrl"
+   ]
+  }
+ ]
+}

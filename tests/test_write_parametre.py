@@ -66,6 +66,7 @@ async def test_preview_without_confirm_does_not_write(tmp_path):
     result = await client.set_parametre("Sites/Familles/Actif", "1")
     assert result == {
         "libelle": "Sites/Familles/Actif",
+        "intitule": "Accès au site Familles",
         "valeur_actuelle": "0",
         "valeur_proposee": "1",
         "ecriture_effectuee": False,

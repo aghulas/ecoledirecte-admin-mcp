@@ -314,20 +314,37 @@ class EcoleDirecteAdminClient:
                 "elle-même exclut de l'édition générique (bancaire, connecteurs, "
                 "délais réglementaires…) — écriture refusée par ce connecteur."
             )
+        from . import parametres_catalogue as catalogue  # import tardif (évite un cycle)
+
+        fiche = catalogue.entree(libelle)
+        if fiche is None:
+            # L'API accepte n'importe quel libellé et renvoie « 0 » pour un libellé
+            # inexistant : écrire sur une faute de frappe créerait un réglage
+            # fantôme sans rien changer au vrai. Refus avant tout appel réseau.
+            proposes = ", ".join(catalogue.suggestions(libelle)) or "aucun"
+            raise ForbiddenEndpointError(
+                f"'{libelle}' est absent du catalogue des paramètres de l'admin — "
+                f"écriture refusée. Libellés proches : {proposes}."
+            )
+        base64_ = bool(fiche.get("base64"))
         current = await self.get_parametres([libelle])
         if not current:
             raise EcoleDirecteApiError(f"Paramètre '{libelle}' introuvable.")
         entry = dict(current[0])
         valeur_actuelle = entry.get("valeur")
+        valeur_envoyee = catalogue.encoder_base64(valeur) if base64_ else valeur
+        lisible = catalogue.decoder_base64 if base64_ else (lambda v: v)
         if not confirm:
             return {
                 "libelle": libelle,
-                "valeur_actuelle": valeur_actuelle,
+                "intitule": fiche["intitule"],
+                "valeur_actuelle": lisible(valeur_actuelle) if valeur_actuelle else valeur_actuelle,
                 "valeur_proposee": valeur,
+                **({"stockage": "base64 (encodé automatiquement)"} if base64_ else {}),
                 "ecriture_effectuee": False,
                 "message": "Aperçu seulement, rien n'a été écrit — rappelle avec confirm=True pour appliquer.",
             }
-        entry["valeur"] = valeur
+        entry["valeur"] = valeur_envoyee
         session = await self._auth.ensure_session(self._http)
         payload = await self._post_write_raw("parametres", {"parametres": [entry]}, session.token)
         code = payload.get("code")
@@ -340,11 +357,11 @@ class EcoleDirecteAdminClient:
         valeur_apres = relu[0].get("valeur") if relu else None
         return {
             "libelle": libelle,
-            "valeur_avant": valeur_actuelle,
+            "valeur_avant": lisible(valeur_actuelle) if valeur_actuelle else valeur_actuelle,
             "valeur_demandee": valeur,
-            "valeur_apres": valeur_apres,
+            "valeur_apres": lisible(valeur_apres) if valeur_apres else valeur_apres,
             "ecriture_effectuee": True,
-            "coherent": valeur_apres == valeur,
+            "coherent": valeur_apres == valeur_envoyee,
         }
 
     async def _post_write_raw(self, path: str, data: dict[str, Any], token: str) -> dict[str, Any]:

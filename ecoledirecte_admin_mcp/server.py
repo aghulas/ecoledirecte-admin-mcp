@@ -24,6 +24,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
+from . import parametres_catalogue as catalogue
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
 from .demandes import demande_activites, demande_coordonnees, demande_telephones
@@ -119,16 +120,109 @@ async def ed_admin_entreprises_search(nom: str, include_sensitive_fields: bool =
     return _users(users, include_sensitive_fields)
 
 
+def _libelles_inconnus(libelles: list[str]) -> list[dict[str, Any]]:
+    return [{"libelle": l, "suggestions": catalogue.suggestions(l)}
+            for l in libelles if not catalogue.est_connu(l)]
+
+
+def _enrichir(valeurs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Ajoute intitulé / menu / rubrique du catalogue, et décode les valeurs base64."""
+    out = []
+    for v in valeurs:
+        fiche = catalogue.entree(str(v.get("libelle", ""))) if isinstance(v, dict) else None
+        if fiche:
+            v = {**v, "intitule": fiche["intitule"], "menu": fiche["menu"], "rubrique": fiche["rubrique"]}
+            if fiche.get("base64") and v.get("valeur") not in (None, "", "<masqué>"):
+                v["valeur_decodee"] = catalogue.decoder_base64(str(v["valeur"]))
+        out.append(v)
+    return out
+
+
 @mcp.tool()
-async def ed_admin_parametres_get(libelles: list[str]) -> Any:
-    """Valeurs de paramètres de l'établissement, par libellé exact. Exemples réels :
-    'Sites/Familles/Notes/Etablissement_0/Notes/Actif', 'Sites/Familles/Comptabilité/Actif',
-    'Messagerie/Actif', 'Messagerie/Etablissement_0/Prof-Fam', 'Sites/Admin/3DSecure/Actif'.
-    Valeurs ('0'/'1' ou texte). Les paramètres ressemblant à des secrets (clés,
-    certificats, mots de passe, IBAN...) sont masqués."""
+async def ed_admin_parametres_get(libelles: list[str], hors_catalogue: bool = False) -> Any:
+    """Valeurs de paramètres de l'établissement, par libellé exact (ex.
+    'Sites/Familles/Actif', 'Messagerie/Etablissement_0/Fam-Admin',
+    'Sites/Familles/Documents/Etablissement_0/Administratifs'). Valeurs '0'/'1'
+    ou texte, avec l'intitulé lisible, le menu et la rubrique de l'admin.
+
+    ⚠️ L'API renvoie « 0 » SANS ERREUR pour un libellé qui n'existe pas : les
+    libellés sont donc vérifiés contre le catalogue (~650 paramètres relevés dans
+    le front admin, voir ed_admin_parametres_catalogue). Un libellé inconnu est
+    refusé avec des suggestions (souvent un accent : 'Sites/Elèves/Actif').
+    `hors_catalogue=True` force la lecture (valeur alors non fiable).
+    Pour lire toute une rubrique d'un coup : ed_admin_parametrage_lire.
+    Les paramètres ressemblant à des secrets sont masqués."""
     if not libelles:
         raise ToolError("Fournis au moins un libellé de paramètre.")
-    return await _get_client().get_parametres(libelles)
+    inconnus = _libelles_inconnus(libelles)
+    if inconnus and not hors_catalogue:
+        raise ToolError(
+            "Libellé(s) absent(s) du catalogue — l'API renverrait « 0 » sans erreur, "
+            "valeur non fiable. Suggestions : "
+            + "; ".join(f"{i['libelle']} → {', '.join(i['suggestions']) or 'aucune'}" for i in inconnus)
+            + ". Voir ed_admin_parametres_catalogue, ou hors_catalogue=True pour forcer."
+        )
+    valeurs = _enrichir(await _get_client().get_parametres(libelles))
+    if inconnus:
+        noms = {i["libelle"] for i in inconnus}
+        valeurs = [{**v, "hors_catalogue": True, "avertissement": "libellé inconnu : valeur non fiable"}
+                   if v.get("libelle") in noms else v for v in valeurs]
+    return valeurs
+
+
+@mcp.tool()
+async def ed_admin_parametres_catalogue(menu: str | None = None, rubrique: str | None = None,
+                                        recherche: str | None = None) -> Any:
+    """Catalogue des paramètres établissement (sans appel réseau) : libellé exact,
+    intitulé lisible, menu et rubrique de l'admin, fiabilité, modifiable ou non.
+
+    Sans filtre : sommaire (nombre de paramètres par menu et rubrique).
+    `menu` : 'généraux', 'familles', 'élèves', 'professeurs', 'personnels',
+    'entreprises' (ou nom complet « Paramétrages … ») ; `rubrique` : ex.
+    'Messagerie', 'Accès sites', 'Documents', 'Vie scolaire' ; `recherche` :
+    texte cherché dans le libellé ou l'intitulé (sans accents ni casse).
+
+    `certain: false` = libellé construit dynamiquement par le front pour plusieurs
+    profils ; il peut ne pas exister pour l'un d'eux. Catalogue régénérable avec
+    tools/extraire_parametres.py si l'admin EcoleDirecte évolue."""
+    if not (menu or rubrique or recherche):
+        return {**catalogue.info_source(), "sommaire": catalogue.sommaire(),
+                "aide": "Filtre par menu / rubrique / recherche pour obtenir les libellés."}
+    entrees = catalogue.lister(menu, rubrique, recherche)
+    if not entrees:
+        raise ToolError("Aucun paramètre pour ce filtre. Appelle l'outil sans filtre pour voir le sommaire.")
+    return {"nombre": len(entrees), "parametres": entrees}
+
+
+@mcp.tool()
+async def ed_admin_parametrage_lire(menu: str, rubrique: str | None = None,
+                                    certains_seulement: bool = True) -> Any:
+    """Lit d'un coup les valeurs actuelles de toute une rubrique (ou tout un menu)
+    de l'admin, avec les intitulés — pour vérifier un paramétrage, par exemple
+    section par section du support de formation Aplim.
+
+    `menu` / `rubrique` : comme ed_admin_parametres_catalogue (ex. menu='généraux',
+    rubrique='Messagerie'). `certains_seulement` (défaut True) écarte les libellés
+    dont l'existence n'est pas certaine pour ce profil (voir le catalogue).
+    Lecture seule ; secrets masqués ; valeurs base64 décodées."""
+    entrees = catalogue.lister(menu, rubrique)
+    if certains_seulement:
+        entrees = [e for e in entrees if e["certain"]]
+    if not entrees:
+        raise ToolError("Aucun paramètre pour ce filtre (voir ed_admin_parametres_catalogue).")
+    if len(entrees) > 300:
+        raise ToolError(f"{len(entrees)} paramètres : précise une rubrique.")
+    valeurs: list[dict[str, Any]] = []
+    libelles = [e["libelle"] for e in entrees]
+    for i in range(0, len(libelles), 100):
+        valeurs += await _get_client().get_parametres(libelles[i:i + 100])
+    groupes: dict[str, list[dict[str, Any]]] = {}
+    for v in _enrichir(valeurs):
+        cle = f"{v.get('menu')} › {v.get('rubrique')}"
+        groupes.setdefault(cle, []).append(
+            {k: v[k] for k in ("libelle", "intitule", "valeur", "valeur_decodee") if k in v})
+    return {"nombre": len(valeurs), "rubriques": groupes,
+            "note": "Valeur '0' ou vide = désactivé / non renseigné (ou valeur par défaut du front)."}
 
 
 @mcp.tool()
@@ -201,8 +295,13 @@ async def ed_admin_parametre_set(libelle: str, valeur: str, confirm: bool = Fals
     EcoleDirecte exclut lui-même de l'édition générique (règlements en ligne,
     connecteurs partenaires, délais réglementaires notes/LSU...).
 
+    Refusé aussi, avant tout appel réseau, pour un libellé absent du catalogue
+    (l'API accepterait une faute de frappe sans rien changer au vrai réglage).
+    Les valeurs stockées en base64 (adresse, présentation de la page contact…)
+    s'écrivent en clair : l'encodage est fait par l'outil.
+
     `libelle` = identifiant exact du paramètre (ex. 'Sites/Familles/Actif',
-    trouvable via ed_admin_parametres_get). `valeur` = nouvelle valeur en
+    trouvable via ed_admin_parametres_catalogue). `valeur` = nouvelle valeur en
     chaîne — les booléens s'écrivent '1'/'0', comme le fait l'interface admin
     elle-même."""
     return await _get_client().set_parametre(libelle, valeur, confirm)
