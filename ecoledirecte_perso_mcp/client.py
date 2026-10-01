@@ -11,9 +11,20 @@ Garde-fous (au niveau du client) :
   2. Ouvrir un message précis le marque « lu » chez le destinataire → tout chemin
      `messages/<id>` (message unique) est BLOQUÉ. Seule la LISTE est autorisée.
   3. Endpoints d'action (marquerLu, corbeille, deplacer, etc.) bloqués.
+
+Exceptions étroites (01/10/2026) — `lire_message` ouvre UN message précis,
+à la demande explicite de l'utilisateur, par un chemin dédié (`_appel_messagerie`)
+qui n'autorise que deux opérations : GET `messages/<id>` et PUT `messages` avec
+l'action `marquerCommeNonLu` sur ce même id (pour remettre le message dans l'état
+où il était) ; `poster_message` (brouillon ou envoi, module messagerie_ecriture) n'est
+accepté que si ED_PERSO_MESSAGERIE_ACTIF=1. Le garde-fou général `check_allowed` reste
+inchangé pour tout le reste.
 """
 from __future__ import annotations
 
+import base64
+import html
+import os
 import re
 from typing import Any
 from urllib.parse import urlencode
@@ -31,6 +42,33 @@ _TYPE_WORD = {"A": "personnels", "E": "eleves", "P": "professeurs", "1": "famill
 _SINGLE_MESSAGE_RE = re.compile(r"messages/\d+")
 # Fragments d'action de messagerie / écriture, bloqués même en apparence GET.
 _FORBIDDEN_FRAGMENTS = ("marquer", "corbeille", "deplacer", "brouillon", "envoi", "supprim")
+
+
+# Dossiers de la messagerie (front EcoleDirecte : ID_DOSSIER_MESSAGERIE)
+DOSSIERS = {"received": -1, "sent": -2, "archived": -3, "draft": -5}
+
+
+def texte_message(contenu_b64: str | None) -> str:
+    """Contenu d'un message (HTML en base64) → texte lisible."""
+    if not contenu_b64:
+        return ""
+    try:
+        h = base64.b64decode(contenu_b64).decode("utf-8", errors="replace")
+    except (ValueError, TypeError):
+        h = str(contenu_b64)
+    h = re.sub(r"(?i)</p>", "\n\n", h)
+    h = re.sub(r"(?i)<br\s*/?>|</div>|</li>", "\n", h)
+    h = re.sub(r"(?s)<[^>]+>", "", h)
+    h = html.unescape(h)
+    return re.sub(r"\n{3,}", "\n\n", h).strip()
+
+
+def personne(p: dict[str, Any] | None) -> str:
+    if not isinstance(p, dict):
+        return ""
+    nom = " ".join(x for x in (p.get("civilite"), p.get("prenom"), p.get("particule"), p.get("nom")) if x)
+    f = p.get("fonctionPersonnel") or (p.get("fonction") or {}).get("libelle") if isinstance(p.get("fonction"), dict) else p.get("fonctionPersonnel")
+    return f"{nom} ({f})" if f else nom
 
 
 class ForbiddenEndpointError(ToolError):
@@ -144,6 +182,84 @@ class EcoleDirectePersoClient:
                   "page": page, "itemsPerPage": items, "getAll": 0}
         return await self.get(f"{self._word()}/{aid}/messages", params,
                               {"anneeMessages": SETTINGS.annee})
+
+    # ------------------------------------------------------------------
+    # Lecture d'UN message (exception étroite, voir en-tête du module)
+    # ------------------------------------------------------------------
+    async def _appel_messagerie(self, path: str, verbe: str, query: dict[str, Any],
+                                data: dict[str, Any]) -> Any:
+        aid = self._account_id()
+        base = f"{self._word()}/{aid}/messages"
+        ok_lecture = verbe == "get" and re.fullmatch(re.escape(base) + r"/\d+", path) and \
+            query.get("mode") in ("destinataire", "expediteur")
+        ok_non_lu = verbe == "put" and path == base and data.get("action") == "marquerCommeNonLu" \
+            and isinstance(data.get("ids"), list) and len(data["ids"]) == 1
+        ok_envoi = verbe == "post" and path == base and isinstance(data.get("message"), dict) \
+            and set(data) <= {"message", "anneeMessages"} and os.environ.get("ED_PERSO_MESSAGERIE_ACTIF") == "1"
+        if not (ok_lecture or ok_non_lu or ok_envoi):
+            raise ForbiddenEndpointError(f"Opération de messagerie non autorisée : {verbe} {path}")
+        for attempt in (1, 2):
+            session = await self._auth.ensure_session(self._http)
+            params = {"verbe": verbe, "v": SETTINGS.api_version, **query}
+            url = f"{SETTINGS.data_base}/{path}.awp?{urlencode(params)}"
+            try:
+                resp = await self._http.post(url, content=encode_form_data(data), headers={
+                    "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json",
+                    "X-Token": session.token, "User-Agent": SETTINGS.user_agent})
+                payload = resp.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                raise EcoleDirectePersoApiError(f"{verbe} {path} : {type(exc).__name__}") from exc
+            self._auth.update_token(payload.get("token"))
+            if payload.get("code") in AUTH_EXPIRED_CODES and attempt == 1:
+                self._auth.invalidate_token()
+                continue
+            if payload.get("code") != 200:
+                raise EcoleDirectePersoApiError(f"{verbe} {path} : code {payload.get('code')} — {payload.get('message') or ''}")
+            return payload.get("data")
+        raise AssertionError("unreachable")
+
+    async def _etat_lu(self, id_message: int, boite: str) -> bool | None:
+        """État lu/non lu d'un message d'après la LISTE (qui ne marque rien)."""
+        for page in range(5):
+            data = await self.list_messages(boite=boite, page=page, items=100)
+            msgs = ((data or {}).get("messages") or {}).get(boite) or []
+            for m in msgs:
+                if int(m.get("id", -1)) == int(id_message):
+                    return bool(m.get("read"))
+            if len(msgs) < 100:
+                return None
+        return None
+
+    async def lire_message(self, id_message: int, boite: str = "received",
+                           remettre_non_lu: bool = True) -> dict[str, Any]:
+        """Ouvre UN message. Pour un message reçu non lu, l'ouverture le marque « lu » :
+        avec `remettre_non_lu` (défaut), il est aussitôt remis en « non lu »."""
+        if boite not in DOSSIERS:
+            raise ToolError("boite doit être 'received', 'sent', 'archived' ou 'draft'.")
+        aid = self._account_id()
+        base = f"{self._word()}/{aid}/messages"
+        mode = "destinataire" if boite in ("received", "archived") else "expediteur"
+        avant = await self._etat_lu(id_message, boite) if boite == "received" else None
+        d = await self._appel_messagerie(f"{base}/{int(id_message)}", "get", {"mode": mode},
+                                         {"anneeMessages": SETTINGS.annee}) or {}
+        remis = False
+        if boite == "received" and remettre_non_lu and avant is False:
+            await self._appel_messagerie(base, "put", {}, {"action": "marquerCommeNonLu", "ids": [int(id_message)],
+                                                           "anneeMessages": SETTINGS.annee})
+            remis = True
+        dest = d.get("to") or d.get("destinataires") or []
+        return {"id": d.get("id", id_message), "dossier": boite, "date": d.get("date"),
+                "objet": d.get("subject"), "de": personne(d.get("from")),
+                "a": [personne(x) for x in dest] if isinstance(dest, list) else dest,
+                "pieces_jointes": [f.get("libelle") for f in (d.get("files") or []) if isinstance(f, dict)],
+                "texte": texte_message(d.get("content")),
+                "etait_lu_avant": avant, "remis_en_non_lu": remis}
+
+    async def poster_message(self, message: dict[str, Any]) -> Any:
+        """Brouillon ou envoi d'un message (appelé uniquement par messagerie_ecriture,
+        après simulation, accord et confirm=True ; refusé si ED_PERSO_MESSAGERIE_ACTIF≠1)."""
+        base = f"{self._word()}/{self._account_id()}/messages"
+        return await self._appel_messagerie(base, "post", {}, {"message": message, "anneeMessages": ""})
 
     async def agenda_evenements(self) -> Any:
         return await self.get(f"{self._word()}/{self._account_id()}/agendaEvenements")

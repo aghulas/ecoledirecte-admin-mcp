@@ -152,3 +152,28 @@ cantine/étude/garderie par élève) — `commandesPassage` est un système de
 réservation à l'unité (repas par repas), pas un forfait hebdomadaire, et de
 toute façon inaccessible depuis ce compte. Ça ne change pas la conclusion :
 priorité à vérifier du côté Charlemagne.
+
+
+## Messagerie : lecture d'un message, brouillon et envoi (01/10/2026)
+
+Relevé dans le front (module messagerie, `messagerie-compose`) :
+- dossiers : reçus −1, envoyés −2, archivés −3, brouillons −5 (`typeRecuperation` received / sent /
+  archived / draft) ;
+- lire : `POST <personnels>/<id>/messages/<idMessage>.awp?verbe=get&mode=destinataire|expediteur`,
+  corps `{anneeMessages}` — **marque le message « lu »** (reçus) ; remettre en non lu :
+  `POST <personnels>/<id>/messages.awp?verbe=put` `{action:"marquerCommeNonLu", ids:[id], anneeMessages}` ;
+- annuaire : `POST messagerie/contacts/{familles|eleves|professeurs|personnels}.awp?verbe=get`
+  (familles : `idClasse, idGroupe, idMatiere, codeMatiere, nom, recupAll, onlyPresents` ; une ligne
+  par élève ET par responsable : `responsable{id, typeResp 1|2, contacts}`) ;
+- brouillon / envoi : `POST <personnels>/<id>/messages.awp?verbe=post`,
+  `{message:{subject, content=base64(escapeHTMLEncode(html)), groupesDestinataires:[{destinataires,
+  selection:{type}}], files, transfertFiles, read, from:{role,id,read}, brouillon:true|false,
+  draftId?}, anneeMessages:""}` ; destinataire = contact de l'annuaire + `to_cc_cci`
+  (to|cc|cci), et `type="1"` pour une famille ; `escapeHTMLEncode` = caractères non ASCII en entités.
+- **Supervision** : le front désactive « Envoyer », « Différer » et « Enregistrer en brouillon » en
+  mode supervision (`isModeSupervision()`). Le connecteur admin ne rédige donc jamais de message pour
+  un autre compte ; l'écriture ne se fait qu'avec les identifiants du compte lui-même.
+
+Implémentation : `client.lire_message` / `poster_message` par un chemin dédié (`_appel_messagerie`)
+qui n'accepte que ces trois opérations ; `check_allowed` continue de bloquer tout le reste.
+Validé en réel le 01/10/2026 (brouillon n°12 adressé au compte lui-même, relu, accents intacts).
