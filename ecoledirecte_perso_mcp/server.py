@@ -19,6 +19,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
+from .messagerie_ecriture import preparer_message, rechercher_contacts
 from .client import EcoleDirectePersoClient
 
 mcp = MCPServer(
@@ -95,15 +96,61 @@ async def ed_perso_professeurs_list() -> Any:
 
 @mcp.tool()
 async def ed_perso_messages_list(
-    boite: str = "received", page: int = 0, items: int = 100, only_read: str = ""
+    boite: str = "received", page: int = 0, items: int = 100, only_read: str = "",
+    recherche: str = ""
 ) -> Any:
     """Liste des messages de la messagerie (⚠️ liste seulement — n'ouvre aucun
-    message, donc ne marque rien comme « lu »). `boite` = 'received', 'sent' ou
-    'archived'. Renvoie les en-têtes (expéditeur, sujet, date, lu/non lu), pas le
-    corps des messages."""
-    if boite not in ("received", "sent", "archived"):
-        raise ToolError("boite doit être 'received', 'sent' ou 'archived'.")
-    return await _get_client().list_messages(boite=boite, page=page, items=items, only_read=only_read)
+    message, donc ne marque rien comme « lu »). `boite` = 'received', 'sent',
+    'archived' ou 'draft' (brouillons). `recherche` = texte cherché (objet,
+    correspondant). Renvoie les en-têtes (id, expéditeur, sujet, date, lu/non lu),
+    pas le corps : pour le lire, ed_perso_message_lire."""
+    if boite not in ("received", "sent", "archived", "draft"):
+        raise ToolError("boite doit être 'received', 'sent', 'archived' ou 'draft'.")
+    return await _get_client().list_messages(boite=boite, page=page, items=items, only_read=only_read,
+                                             query=recherche)
+
+
+@mcp.tool()
+async def ed_perso_message_lire(id_message: int, boite: str = "received",
+                                remettre_non_lu: bool = True) -> Any:
+    """Ouvre UN message de la messagerie du compte et renvoie son contenu (objet,
+    expéditeur, destinataires, date, texte, pièces jointes listées).
+    ⚠️ À n'appeler QUE si l'utilisateur demande explicitement de lire CE message
+    (id obtenu par ed_perso_messages_list) : l'ouverture d'un message reçu non lu
+    le marque « lu ». Par défaut (`remettre_non_lu=True`), il est aussitôt remis en
+    « non lu » s'il l'était avant. `boite` = dossier du message ('received',
+    'sent', 'archived', 'draft')."""
+    return await _get_client().lire_message(id_message, boite, remettre_non_lu)
+
+
+@mcp.tool()
+async def ed_perso_contacts_rechercher(type: str, nom: str = "") -> Any:
+    """Annuaire de la messagerie (lecture) : destinataires possibles d'un message.
+    `type` = 'famille' (recherche par NOM DE L'ÉLÈVE ; une ligne par parent, avec
+    id_eleve et responsable '1' ou '2') ou 'personnel' (filtre sur le nom). Sert à
+    choisir les destinataires de ed_perso_message_ecrire."""
+    return await rechercher_contacts(_get_client(), type, nom)
+
+
+@mcp.tool()
+async def ed_perso_message_ecrire(sujet: str, texte: str, destinataires: list[dict[str, Any]],
+                                  mode: str = "brouillon", confirm: bool = False) -> Any:
+    """ÉCRITURE — prépare un message de la messagerie EcoleDirecte du compte connecté
+    (compte PARTAGÉ du secrétariat : il part sous son nom). `mode` = 'brouillon'
+    (déposé dans les brouillons ; l'utilisateur relit et envoie lui-même depuis
+    EcoleDirecte — à privilégier) ou 'envoi' (envoyé directement).
+
+    `destinataires` = liste de {"type": "famille", "id_eleve": N, "responsable":
+    "1"|"2"|"tous", "champ": "to"|"cc"|"cci"} ou {"type": "personnel", "id": N,
+    "champ": …} (ids : ed_perso_contacts_rechercher). `texte` = texte brut
+    (paragraphes séparés par une ligne vide), signature comprise.
+
+    Sans confirm=True (par défaut) : SIMULATION — destinataires résolus, objet et
+    texte affichés, rien n'est écrit. Il faut TOUJOURS montrer la simulation à
+    l'utilisateur et obtenir son accord explicite avant confirm=True.
+    Garde-fous : ED_PERSO_MESSAGERIE_ACTIF=1 ; plafond ED_PERSO_MESSAGERIE_MAX_DEST
+    (défaut 30) ; messagerie inactive refusée ; pas de pièce jointe ; journal."""
+    return await preparer_message(_get_client(), sujet, texte, destinataires, mode, confirm)
 
 
 @mcp.tool()

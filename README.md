@@ -232,6 +232,9 @@ cd ~/dev/ecoledirecte-admin-mcp
 | `ed_perso_niveaux_list` | référentiel niveaux/classes |
 | `ed_perso_professeurs_list` | annuaire enseignants |
 | `ed_perso_messages_list(boite)` | messagerie en liste (received/sent/archived) |
+| `ed_perso_message_lire(id_message, boite?, remettre_non_lu?)` | ouvre UN message (objet, correspondants, texte, pièces jointes listées) — uniquement à la demande explicite ; remis en « non lu » s'il l'était |
+| `ed_perso_contacts_rechercher(type, nom?)` | annuaire de la messagerie : familles (par nom d'élève, une ligne par parent) ou personnels |
+| `ed_perso_message_ecrire(sujet, texte, destinataires, mode?, confirm?)` | **ÉCRITURE** — brouillon (`mode="brouillon"`, à privilégier) ou envoi ; simulation par défaut, `ED_PERSO_MESSAGERIE_ACTIF=1`, plafond `ED_PERSO_MESSAGERIE_MAX_DEST` |
 | `ed_perso_agenda` | événements agenda |
 | `ed_perso_carnet_liaison_non_lus` | compteurs non lus du cahier de liaison |
 | `ed_perso_rendez_vous` | sessions et RDV individuels |
