@@ -27,13 +27,17 @@ info:
     aligné sur le connecteur MCP v0.5.0. Les autres actions d'écriture du
     MCP (dépôt de pièces, demandes de modification) restent volontairement
     hors de ce contrat.
+    v0.3.0 (02/10/2026) : GET /admin/connecteurs renvoie l'état réel des
+    applis partenaires par public (recherche, détail par code) — aligné sur
+    le connecteur MCP v0.6.0 ; l'activation/désactivation
+    (ed_admin_connecteur_activer) reste hors de ce contrat.
 
     Note format : Power Platform / Copilot Studio exige aujourd'hui un import
     au format OpenAPI 2.0 (Swagger) pour les connecteurs personnalisés — un
     support natif OpenAPI 3.0 est annoncé (release wave 2025 wave 2) mais pas
     encore la voie standard documentée ; ce fichier est donc volontairement
     en 2.0 pour être importable directement.
-  version: "0.2.0"
+  version: "0.3.0"
 host: TODO-nom-app.azurewebsites.net
 basePath: /
 schemes:
@@ -471,19 +475,29 @@ paths:
     get:
       operationId: AdminConnecteursList
       tags: [admin]
-      summary: Applications partenaires activées
-      x-ms-summary: Applications partenaires activées
-      description: "Connecteurs / « Mes Applis » : libellé, code, description, activation, données RGPD partagées."
+      summary: Applications partenaires (« Mes Applis ») et leur état réel
+      x-ms-summary: Applications partenaires (Mes Applis)
+      description: "Applis partenaires avec leur état réel par public (lu dans les paramètres d'activation), activation par défaut, adaptation à l'école, données transmises à l'éditeur, contraintes ; détail d'une appli avec code."
       parameters:
         - name: actifs_seulement
           in: query
           type: boolean
           default: true
-          description: Par défaut, uniquement les connecteurs activés pour l'établissement.
+          description: Par défaut, uniquement les applis actives pour au moins un public.
+        - name: recherche
+          in: query
+          type: string
+          required: false
+          description: Filtre sur le libellé ou le code.
+        - name: code
+          in: query
+          type: string
+          required: false
+          description: Code d'une appli pour obtenir son détail.
       responses:
         "200":
-          description: Liste des connecteurs
-          schema: { type: array, items: { type: object } }
+          description: "{ nb, nb_actives_total, applis } ou le détail d'une appli"
+          schema: { type: object }
 
   /admin/activites:
     get:

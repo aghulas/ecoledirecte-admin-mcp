@@ -10,20 +10,26 @@ N'expose PAS : factures, notes, messages (absents de l'API admin), ni aucun
 endpoint renvoyant identifiants/mots de passe d'utilisateurs ou ouvrant une
 supervision (bloqués dans client.py).
 
-EXCEPTIONS D'ÉCRITURE (2, explicites) :
+EXCEPTIONS D'ÉCRITURE (explicites, voir aussi README) :
   - 16/09/2026 : `ed_admin_parametre_set` écrit UN paramètre établissement
     (voir sa docstring et client.py::set_parametre) ;
   - 23/09/2026 : `ed_admin_deposer_piece` dépose UN PDF dans une liste de pièces
-    à verser, au nom de la famille, via la supervision (depot_pieces.py).
+    à verser, au nom de la famille, via la supervision (depot_pieces.py) ;
+  - 30/09/2026 : demandes de modification (demandes.py) ;
+  - 02/10/2026 : `ed_admin_connecteur_activer` (dés)active une application
+    partenaire (paramètres « Sites/Connecteur/…/Actif », connecteurs.py),
+    ED_ADMIN_CONNECTEURS_ACTIF=1.
 Tous les autres outils restent strictement lecture seule.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
+from . import connecteurs as connecteurs_mod
 from . import parametres_catalogue as catalogue
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
@@ -240,19 +246,96 @@ async def ed_admin_synchros_etat() -> Any:
     return await _get_client().synchros()
 
 
+async def _connecteurs_et_etat() -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
+    """(réponse `connecteurs`, valeurs des paramètres d'activation, établissements)."""
+    c = _get_client()
+    data = await c.list_connecteurs()
+    if not isinstance(data, dict):
+        raise ToolError("Réponse inattendue de l'API (connecteurs).")
+    etabs_info = [e for e in ((await c.session_info()) or {}).get("etablissements") or [] if isinstance(e, dict)]
+    etabs = [int(e["id"]) for e in etabs_info if e.get("id") not in (None, 0)]
+    cles: list[str] = []
+    for conn in data.get("connecteurs") or []:
+        cles += [k for k, _ in connecteurs_mod.cles_activation(conn, etabs)]
+        if conn.get("isCASAuth") and conn.get("isActivationByEtab"):
+            cles += [connecteurs_mod.cle(conn, "RNE", False, e) for e in etabs]
+    valeurs: dict[str, Any] = {}
+    for i in range(0, len(cles), 40):
+        for v in await c.get_parametres(cles[i:i + 40]):
+            valeurs[v.get("libelle")] = v.get("valeur")
+    return data, valeurs, etabs_info
+
+
 @mcp.tool()
-async def ed_admin_connecteurs_list(actifs_seulement: bool = True) -> Any:
-    """Applications partenaires (« Mes Applis » / connecteurs) : libellé, code,
-    description, activation établissement, données RGPD partagées. Par défaut
-    uniquement celles activées pour l'établissement."""
-    data = await _get_client().list_connecteurs()
-    connecteurs = (data or {}).get("connecteurs", []) if isinstance(data, dict) else []
-    keep = ("code", "libelle", "description", "isActifEtab", "isPremium", "isAppliTierce",
-            "urlSiteConnecteur", "tabRGPD")
-    rows = [{k: c.get(k) for k in keep} for c in connecteurs if isinstance(c, dict)]
+async def ed_admin_connecteurs_list(actifs_seulement: bool = True, recherche: str | None = None,
+                                    code: str | None = None) -> Any:
+    """Applications partenaires (« Mes Applis » de l'admin) avec leur état RÉEL
+    par public (Familles, Élèves, Enseignants, Personnels), lu dans les
+    paramètres d'activation — le champ isActifEtab de l'API n'est pas fiable.
+    Pour chaque appli : actif, état par public, activée par défaut par Aplim,
+    niveaux visés et « adapte_ecole » (maternelle/élémentaire), premium,
+    données personnelles transmises à l'éditeur par public, contraintes
+    (clé d'API, CAS, activation par classe, paramètres complémentaires).
+
+    - `actifs_seulement` (défaut True) : seulement les applis actives pour au
+      moins un public ; False = tout le catalogue (87 applis).
+    - `recherche` : filtre sur le libellé ou le code.
+    - `code` : une appli précise, avec le détail (description, info
+      administrateur, publics possibles, catégories, site, clés de paramètres).
+    Lecture seule ; pour (dés)activer : ed_admin_connecteur_activer."""
+    data, valeurs, etabs_info = await _connecteurs_et_etat()
+    etabs = [int(e["id"]) for e in etabs_info if e.get("id") not in (None, 0)]
+    cats = connecteurs_mod._labels_categories(data.get("categories") or [])
+    rgpd = data.get("rgpd") or []
+    conns = [x for x in data.get("connecteurs") or [] if isinstance(x, dict)]
+    if code:
+        conn = next((x for x in conns if str(x.get("code")).lower() == code.strip().lower()), None)
+        if conn is None:
+            raise ToolError(f"Appli de code {code!r} introuvable (voir ed_admin_connecteurs_list(actifs_seulement=False)).")
+        return connecteurs_mod.ligne(conn, valeurs, etabs, cats, rgpd, detail=True)
+    rows = [connecteurs_mod.ligne(x, valeurs, etabs, cats, rgpd) for x in conns]
+    if recherche:
+        r = recherche.strip().lower()
+        rows = [x for x in rows if r in x["libelle"].lower() or r in str(x["code"]).lower()]
     if actifs_seulement:
-        rows = [r for r in rows if r.get("isActifEtab")]
-    return rows
+        rows = [x for x in rows if x["actif"]]
+    return {"nb": len(rows), "nb_actives_total": sum(1 for x in conns if connecteurs_mod.etat(x, valeurs, etabs)
+                                                    and any(connecteurs_mod.etat(x, valeurs, etabs).values())),
+            "applis": rows}
+
+
+@mcp.tool()
+async def ed_admin_connecteur_activer(code: str, actif: bool, publics: list[str] | None = None,
+                                      confirm: bool = False) -> Any:
+    """ÉCRITURE — active ou désactive une application partenaire (« Mes Applis »)
+    pour tous ses publics ou certains (`publics` : Familles, Élèves, Enseignants,
+    Personnels — ou F/E/P/A), exactement comme l'écran Connecteurs de l'admin :
+    écriture des paramètres « …/Actif » (et du RNE pour une appli CAS).
+
+    Sans confirm=True (par défaut) : SIMULATION — état avant/après par public et,
+    pour une activation, les données personnelles qui seront transmises à
+    l'éditeur. Il faut TOUJOURS obtenir l'accord explicite de l'utilisateur en
+    conversation avant d'appeler avec confirm=True. Refuse : applis à écran
+    spécifique (non universelles) ; activation d'une appli qui exige une clé
+    d'API, une activation par classe ou des paramètres complémentaires (à faire
+    dans l'admin). Désactivation toujours possible pour une appli universelle."""
+    data, valeurs, etabs_info = await _connecteurs_et_etat()
+    conn = next((x for x in data.get("connecteurs") or [] if str(x.get("code")).lower() == code.strip().lower()), None)
+    if conn is None:
+        raise ToolError(f"Appli de code {code!r} introuvable.")
+    try:
+        plan = connecteurs_mod.plan_activation(conn, valeurs, etabs_info, actif, publics, data.get("rgpd") or [])
+    except ValueError as exc:
+        raise ToolError(str(exc)) from exc
+    if not plan["a_ecrire"]:
+        return {**plan, "ecriture_effectuee": False, "message": "Rien à changer : déjà dans l'état demandé."}
+    if not confirm:
+        return {**plan, "ecriture_effectuee": False,
+                "message": "Simulation, rien n'a été écrit — rappeler avec confirm=True après accord explicite."}
+    if os.environ.get("ED_ADMIN_CONNECTEURS_ACTIF", "") != "1":
+        raise ToolError("Écriture désactivée (ED_ADMIN_CONNECTEURS_ACTIF≠1) — jamais activée sur Azure.")
+    res = await _get_client().ecrire_activation_connecteur({ch["libelle"]: ch["apres"] for ch in plan["a_ecrire"]})
+    return {**plan, "ecriture_effectuee": True, **res}
 
 
 @mcp.tool()

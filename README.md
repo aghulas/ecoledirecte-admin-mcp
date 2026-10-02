@@ -76,7 +76,8 @@ Une seule fois, dans le Terminal :
 | `ed_admin_parametrage_lire(menu, rubrique?)` | valeurs actuelles de toute une rubrique ou tout un menu de l'admin, d'un coup |
 | `ed_admin_stats_connexions` | connexions par profil et période |
 | `ed_admin_synchros_etat` | derniers transferts Charlemagne → ED |
-| `ed_admin_connecteurs_list` | applis partenaires activées |
+| `ed_admin_connecteurs_list(actifs_seulement?, recherche?, code?)` | applis partenaires (« Mes Applis ») : état réel par public lu dans les paramètres (`isActifEtab` de l'API n'est pas fiable), activée par défaut, adaptée à l'école, données transmises à l'éditeur, contraintes ; `code` = détail |
+| `ed_admin_connecteur_activer(code, actif, publics?, confirm?)` | **ÉCRITURE** — (dés)active une appli partenaire pour tous ses publics ou certains ; simulation par défaut |
 | `ed_admin_activites_list` | activités de suivi (cantine, étude…) |
 | `ed_admin_referentiels_get` | sanctions, catégories de suivi, tags CDT, salles… |
 | `ed_admin_activation_comptes(classe?, inclure_noms?)` | activation des comptes par classe : élèves sans aucun parent connecté, responsables jamais connectés, taux |
@@ -97,7 +98,7 @@ Une seule fois, dans le Terminal :
 - Paramètres ressemblant à des secrets (clés, certificats, mots de passe, IBAN…) masqués.
 - Aucun token ni mot de passe dans les messages d'erreur.
 
-### ⚠️ Écriture : cinq outils seulement
+### ⚠️ Écriture : six outils seulement
 
 | Outil | Depuis | Activation | Détails |
 |---|---|---|---|
@@ -105,9 +106,10 @@ Une seule fois, dans le Terminal :
 | `ed_admin_deposer_piece` | 23/09/2026 | `ED_ADMIN_DEPOT_ACTIF=1` | §8 ; listes : `ED_ADMIN_DEPOT_LISTES` (libellés, débuts de libellés ≥ 6 lettres et/ou numéros, ex. `1|2|7` ou `Fiches Rentrée|Justificatifs`) ; simulation vérifiée en lecture seule (`verifier=True`) |
 | `ed_admin_demande_activites` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; types : `ED_ADMIN_DEMANDES_TYPES` ; codes : `ED_ADMIN_DEMANDES_ACTIVITES` |
 | `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
+| `ed_admin_connecteur_activer` | 02/10/2026 | `ED_ADMIN_CONNECTEURS_ACTIF=1` | §10 ; seulement les applis « universelles » ; écrit `Sites/Connecteur/…/Actif` (et le RNE d'une appli CAS) comme l'écran Connecteurs ; refuse l'activation si clé d'API, activation par classe ou paramètres complémentaires |
 | `ed_admin_demande_coordonnees` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; type `coordonnees` : adresse, et pour chaque parent nom, mails, téléphones, profession, société, CSP ; jamais la banque |
 
-Communs aux cinq : simulation par défaut, `confirm=True` seulement après accord explicite en
+Communs aux six : simulation par défaut, `confirm=True` seulement après accord explicite en
 conversation, activation par variable d'environnement (jamais sur Azure), journal local.
 **Aucun outil MCP** ne touche au mode de règlement ni aux coordonnées bancaires : l'assistant ne
 doit jamais voir ni saisir un IBAN.
@@ -269,3 +271,18 @@ Variables d'environnement nécessaires (voir le dépôt partagé `mcp-entra-auth
 
 Ports fixés dans le code (`argparse --port` de chaque `__main__.py`), pas dans cette
 doc — en cas de doute, le code fait foi.
+
+
+### 10. Applications partenaires (« Mes Applis », 02/10/2026)
+
+Relevé dans le front (`ConnecteurDetailDirectiveCtrl`) : l'activation d'une appli n'a pas
+d'endpoint propre, ce sont des paramètres établissement écrits par le POST `parametres`.
+Clé = format fourni par l'API pour chaque appli (`formatCleParametreSansCible`,
+`formatCleParametreMultiCible`, `formatCleParametreSpecifique`, avec `%CODE%`, `%IDETAB%`,
+`%CIBLECOURT%`) + `Actif` ; un paramètre par public (F, E, P, A) si l'appli s'active par
+public, par établissement si elle s'active par établissement (sinon établissement 0). Pour
+une appli CAS activée par établissement, le front renseigne aussi `…/RNE`. Le champ
+`isActifEtab` est faux pour toutes les applis : l'état réel est dans les paramètres. Beaucoup
+d'applis sont activées par défaut par Aplim (`activerParDefaut`). Les applis non
+« universelles » (ESIDOC, CATER, SACOCHE, VOLTAIRE, ALISE, ARD, SCOLACONCEPT) ont un écran
+codé en dur : hors périmètre.

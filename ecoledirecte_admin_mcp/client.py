@@ -364,6 +364,51 @@ class EcoleDirecteAdminClient:
             "coherent": valeur_apres == valeur_envoyee,
         }
 
+    async def ecrire_activation_connecteur(self, valeurs: dict[str, str]) -> dict[str, Any]:
+        """Écrit les paramètres d'activation d'une application partenaire
+        (« Mes Applis ») en UN POST `parametres`, comme le front admin
+        (ConnecteurDetailDirectiveCtrl.saveParams), puis relit.
+
+        Seconde exception d'écriture, volontairement étroite : chaque libellé doit
+        désigner une appli partenaire (« Sites/Connecteur/… » ou, format spécifique,
+        « Sites/<Public>/Connecteur<Nom>/… ») et finir par « /Actif » (valeur 0/1)
+        ou « /RNE » (RNE de l'établissement, pour un connecteur CAS) ; jamais de clé
+        d'API, de secret ni de paramètre complémentaire. Les libellés sont calculés
+        par connecteurs.plan_activation à partir des formats de clés fournis par
+        l'API elle-même (pas de saisie libre)."""
+        if not valeurs:
+            raise ForbiddenEndpointError("Aucun paramètre à écrire.")
+        for libelle, valeur in valeurs.items():
+            norm = _normalize(libelle)
+            # « Sites/Connecteur/<code>/… » (format générique) ou, pour les applis à
+            # format spécifique, « Sites/<Public>/Connecteur<Nom>/Etablissement_<n>/… ».
+            ok = re.match(r"sites/(connecteurs?/|[a-z]+/connecteur[^/]+/)", norm) is not None and (
+                (norm.endswith("/actif") and valeur in ("0", "1"))
+                or (norm.endswith("/rne") and re.fullmatch(r"[0-9]{7}[A-Za-z]", str(valeur)))
+            )
+            if not ok or is_secret_param(libelle):
+                raise ForbiddenEndpointError(
+                    f"'{libelle}' = {valeur!r} n'est pas un paramètre d'activation d'application "
+                    "partenaire autorisé — écriture refusée."
+                )
+        actuels = {e.get("libelle"): dict(e) for e in await self.get_parametres(list(valeurs))}
+        entrees = []
+        for libelle, valeur in valeurs.items():
+            e = actuels.get(libelle) or {"libelle": libelle, "encoded": False}
+            e["valeur"] = valeur
+            entrees.append(e)
+        session = await self._auth.ensure_session(self._http)
+        payload = await self._post_write_raw("parametres", {"parametres": entrees}, session.token)
+        code = payload.get("code")
+        self._auth.update_token(payload.get("token"))
+        if code != 200:
+            raise EcoleDirecteApiError(
+                f"Écriture refusée : code {code} — {payload.get('message') or 'sans message'}"
+            )
+        relus = {e.get("libelle"): e.get("valeur") for e in await self.get_parametres(list(valeurs))}
+        return {"valeurs_apres": relus,
+                "coherent": all(str(relus.get(k)) == str(v) for k, v in valeurs.items())}
+
     async def _post_write_raw(self, path: str, data: dict[str, Any], token: str) -> dict[str, Any]:
         """Variante ÉCRITURE de _post_raw (verbe=post) — utilisée UNIQUEMENT par
         set_parametre. Ne passe jamais par check_allowed (qui bloque tout non-GET
