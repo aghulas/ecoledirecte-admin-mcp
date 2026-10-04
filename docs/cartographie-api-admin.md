@@ -258,3 +258,33 @@ d'activité présent sur la fiche de l'élève ou listé dans `ED_ADMIN_DEMANDES
 limités à L/M/J/V ; refus si une demande est déjà en attente ; téléphones : seuls les numéros
 français reconnus sont reformatés, les autres sont signalés ; journal `demandes.csv`.
 **Tests** : `tests/test_demandes.py` (40 tests, aucun réseau).
+
+## 11. Supervision en lecture : emploi du temps d'un enseignant (04/10/2026)
+
+**Contexte** : l'emploi du temps est en lecture seule dans EcoleDirecte. Il vient
+de Charlemagne Vie Scolaire (semaine type importée ou saisie, générée, puis
+transfert du module VS). Aucun écran ni endpoint de l'API famille/enseignant ne
+crée, déplace ou supprime un cours (front relu le 04/10 : seuls des
+`emploidutemps` en `verbe=get`). Les seules écritures voisines sont l'agenda
+personnel, le cahier journal des enseignants et la réservation de salles.
+
+**Flux** (même mécanisme que §8, type « P ») :
+1. `POST v3/admin/supervision.awp?id=<id enseignant>&type=P&n=<NOM[:3]>&version=`
+2. `POST v3/loginexterne.awp?verbe=post` → jeton de l'espace enseignant
+3. `POST v3/P/<id>/emploidutemps.awp?verbe=get` avec
+   `data={"dateDebut":"AAAA-MM-JJ","dateFin":"AAAA-MM-JJ","avecTrous":false}`
+   → liste de cours `{start_date, end_date, codeMatiere, matiere, classe, salle,
+   prof, typeCours, isAnnule, isModifie, …}`.
+
+Variantes vues dans le front : `E/<id>/emploidutemps` (élève), et vues classe /
+groupe (`…/<id>/EmploiDuTemps`).
+
+**Constats** : les vacances et jours fériés n'apparaissent pas (filtrés par
+EcoleDirecte, alors que Charlemagne génère des cours sur toute l'année) ; une
+matière créée dans Charlemagne après le dernier transfert du module
+**Administratif** apparaît sans code ni libellé (`codeMatiere` vide) jusqu'au
+transfert suivant de ce module ; l'identifiant enseignant EcoleDirecte est
+l'`IDPERSONNEL` de Charlemagne.
+
+**Outil** : `ed_admin_emploi_du_temps` (`edt.py`), `ED_ADMIN_EDT_ACTIF=1`,
+uniquement des `verbe=get` après l'ouverture de session, période ≤ 31 jours.
