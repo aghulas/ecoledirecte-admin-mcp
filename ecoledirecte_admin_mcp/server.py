@@ -19,6 +19,9 @@ EXCEPTIONS D'ÉCRITURE (explicites, voir aussi README) :
   - 02/10/2026 : `ed_admin_connecteur_activer` (dés)active une application
     partenaire (paramètres « Sites/Connecteur/…/Actif », connecteurs.py),
     ED_ADMIN_CONNECTEURS_ACTIF=1.
+SUPERVISION EN LECTURE (04/10/2026) : `ed_admin_emploi_du_temps` ouvre l'espace
+d'un enseignant pour lire son emploi du temps (verbe=get uniquement, edt.py),
+ED_ADMIN_EDT_ACTIF=1.
 Tous les autres outils restent strictement lecture seule.
 """
 from __future__ import annotations
@@ -35,6 +38,7 @@ from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
 from .demandes import demande_activites, demande_coordonnees, demande_telephones
 from .depot_pieces import deposer_piece, etat_pieces
+from .edt import emploi_du_temps_enseignant
 
 mcp = MCPServer(
     name="ecoledirecte-admin",
@@ -245,6 +249,22 @@ async def ed_admin_synchros_etat() -> Any:
     message. Utile pour vérifier que les données ED sont à jour."""
     return await _get_client().synchros()
 
+
+
+@mcp.tool()
+async def ed_admin_emploi_du_temps(enseignant: str, date_debut: str, date_fin: str | None = None) -> Any:
+    """Emploi du temps d'un enseignant TEL QU'ECOLEDIRECTE L'AFFICHE, sur une période
+    (date_fin optionnelle = 7 jours ; 31 jours maximum). `enseignant` = nom (sans
+    accents ni casse) ou identifiant EcoleDirecte. Renvoie les cours (date, heures,
+    matière, classe, salle, annulé/modifié), un comptage par jour et par classe, et
+    le nombre de cours sans matière (matière inconnue d'EcoleDirecte : relancer le
+    transfert du module Administratif depuis Charlemagne).
+
+    Sert à vérifier un import d'emploi du temps Charlemagne après le transfert Vie
+    scolaire. LECTURE SEULE via la supervision de l'espace enseignant
+    (ED_ADMIN_EDT_ACTIF=1). L'emploi du temps ne se modifie pas dans EcoleDirecte :
+    toute correction se fait dans Charlemagne Vie Scolaire."""
+    return await emploi_du_temps_enseignant(_get_client(), enseignant, date_debut, date_fin)
 
 async def _connecteurs_et_etat() -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
     """(réponse `connecteurs`, valeurs des paramètres d'activation, établissements)."""

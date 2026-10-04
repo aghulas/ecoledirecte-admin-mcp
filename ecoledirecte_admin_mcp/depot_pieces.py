@@ -224,7 +224,9 @@ class SessionFamille:
 
 
 async def ouvrir_supervision(admin_client, compte: dict[str, Any]) -> SessionFamille:
-    type_code = "2" if compte.get("type") == "conjoint" else "1"
+    # type_code explicite pour un personnel/enseignant (« P », cf. edt.py) ;
+    # sinon compte famille : 1 = responsable, 2 = conjoint.
+    type_code = compte.get("type_code") or ("2" if compte.get("type") == "conjoint" else "1")
     url = (f"{SETTINGS.api_base}supervision.awp?id={compte['id']}&type={type_code}"
            f"&n={quote(compte['nom'][:3])}&version=")
     http = httpx.AsyncClient(timeout=SETTINGS.timeout_seconds, follow_redirects=False)

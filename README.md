@@ -76,6 +76,7 @@ Une seule fois, dans le Terminal :
 | `ed_admin_parametrage_lire(menu, rubrique?)` | valeurs actuelles de toute une rubrique ou tout un menu de l'admin, d'un coup |
 | `ed_admin_stats_connexions` | connexions par profil et période |
 | `ed_admin_synchros_etat` | derniers transferts Charlemagne → ED |
+| `ed_admin_emploi_du_temps(enseignant, date_debut, date_fin?)` | emploi du temps d'un enseignant tel qu'EcoleDirecte l'affiche (supervision en lecture, `ED_ADMIN_EDT_ACTIF=1`) — vérification d'un import Charlemagne |
 | `ed_admin_connecteurs_list(actifs_seulement?, recherche?, code?)` | applis partenaires (« Mes Applis ») : état réel par public lu dans les paramètres (`isActifEtab` de l'API n'est pas fiable), activée par défaut, adaptée à l'école, données transmises à l'éditeur, contraintes ; `code` = détail |
 | `ed_admin_connecteur_activer(code, actif, publics?, confirm?)` | **ÉCRITURE** — (dés)active une appli partenaire pour tous ses publics ou certains ; simulation par défaut |
 | `ed_admin_activites_list` | activités de suivi (cantine, étude…) |
