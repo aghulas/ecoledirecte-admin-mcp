@@ -38,6 +38,7 @@ from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
 from .demandes import demande_activites, demande_coordonnees, demande_telephones
 from .depot_pieces import deposer_piece, etat_pieces
+from .documents import documents_ecole, documents_famille, telecharger_document
 from .edt import emploi_du_temps_enseignant
 
 mcp = MCPServer(
@@ -481,6 +482,45 @@ async def ed_admin_pieces_etat(id_eleve: int, compte_id: int | None = None) -> A
     `id_eleve` = un élève de la famille ; `compte_id` = compte famille précis
     (par défaut le responsable)."""
     return await etat_pieces(_get_client(), id_eleve, compte_id)
+
+
+@mcp.tool()
+async def ed_admin_documents_famille(id_eleve: int, compte_id: int | None = None,
+                                     archive: str = "") -> Any:
+    """LECTURE — documents publiés dans l'espace « Documents » d'une famille
+    (factures, administratifs, notes, vie scolaire, inscription…) : rubrique,
+    intitulé, date, type, signature demandée et son état. Une publication dans
+    Documents ne notifie PAS les familles (contrairement à un message). Ouvre une
+    supervision en lecture seule ; aucun document n'est ouvert ni téléchargé.
+    `id_eleve` = un élève de la famille ; `compte_id` = compte famille précis
+    (par défaut le responsable) ; `archive` = année d'archive (vide = en cours).
+    Les pièces à verser sont dans ed_admin_pieces_etat."""
+    return await documents_famille(_get_client(), id_eleve, compte_id, archive)
+
+
+@mcp.tool()
+async def ed_admin_documents_ecole(classe: str | None = None, archive: str = "") -> Any:
+    """LECTURE — documents publiés par l'école dans l'espace « Documents » des
+    familles, regroupés par intitulé et date, avec les classes où ils sont
+    visibles (« toutes les classes » ou « classes ciblées »). Reconstitué en lisant
+    l'espace d'UNE famille par classe (supervision en lecture seule, ~2 s par
+    classe) ; factures, documents nominatifs et à signer (mandat SEPA) écartés.
+    Sert à retrouver une circulaire publiée sans notification. `classe` =
+    libellé ou idClasse pour se limiter à une classe ; `archive` = année."""
+    return await documents_ecole(_get_client(), classe, archive)
+
+
+@mcp.tool()
+async def ed_admin_document_telecharger(id_eleve: int, document_id: int, compte_id: int | None = None,
+                                        archive: str = "") -> Any:
+    """LECTURE — télécharge un document publié dans l'espace « Documents » d'une
+    famille (circulaire, facture…) et l'enregistre en PDF dans le dossier local
+    ED_ADMIN_DOCUMENTS_DIR (droits 600, jamais écrasé) ; renvoie le chemin.
+    `document_id` = champ `id` donné par ed_admin_documents_famille pour la même
+    famille (`id_eleve` = un élève de la famille). Supervision en lecture seule.
+    Refuse les documents bancaires (mandat SEPA, RIB). Les pièces déposées par les
+    familles (pièces à verser) ne sont pas concernées."""
+    return await telecharger_document(_get_client(), id_eleve, document_id, compte_id, archive)
 
 
 @mcp.tool()
