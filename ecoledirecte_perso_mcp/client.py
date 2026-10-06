@@ -25,6 +25,7 @@ from __future__ import annotations
 import base64
 import html
 import os
+from pathlib import Path
 import re
 from typing import Any
 from urllib.parse import urlencode
@@ -93,6 +94,12 @@ def check_allowed(path: str, verbe: str) -> None:
     for frag in _FORBIDDEN_FRAGMENTS:
         if frag in low:
             raise ForbiddenEndpointError(f"Endpoint d'action/écriture exclu : '{path}'.")
+
+
+def _type_mime(p: "Path") -> str:
+    return {".pdf": "application/pdf", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+            ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}.get(
+        p.suffix.lower(), "application/octet-stream")
 
 
 class EcoleDirectePersoClient:
@@ -254,6 +261,38 @@ class EcoleDirectePersoClient:
                 "pieces_jointes": [f.get("libelle") for f in (d.get("files") or []) if isinstance(f, dict)],
                 "texte": texte_message(d.get("content")),
                 "etait_lu_avant": avant, "remis_en_non_lu": remis}
+
+    async def televerser_piece_jointe(self, chemin: "Path") -> dict[str, Any]:
+        """Dépose une pièce jointe de message dans l'espace temporaire EcoleDirecte
+        (POST v3/televersement.awp?verbe=post, multipart `file`, comme le formulaire
+        « Nouveau message ») ; renvoie {unc, libelle}. Appelé uniquement par
+        messagerie_ecriture après accord et confirm=True ; refusé si
+        ED_PERSO_MESSAGERIE_ACTIF≠1."""
+        if os.environ.get("ED_PERSO_MESSAGERIE_ACTIF") != "1":
+            raise ForbiddenEndpointError("Téléversement refusé (ED_PERSO_MESSAGERIE_ACTIF≠1).")
+        contenu = chemin.read_bytes()
+        for attempt in (1, 2):
+            session = await self._auth.ensure_session(self._http)
+            url = f"{SETTINGS.data_base}/televersement.awp?{urlencode({'verbe': 'post', 'v': SETTINGS.api_version})}"
+            try:
+                resp = await self._http.post(
+                    url, files={"file": (chemin.name, contenu, _type_mime(chemin))},
+                    headers={"X-Token": session.token, "User-Agent": SETTINGS.user_agent,
+                             "Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+                    timeout=120)
+                payload = resp.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                raise EcoleDirectePersoApiError(f"televersement : {type(exc).__name__}") from exc
+            self._auth.update_token(payload.get("token"))
+            if payload.get("code") in AUTH_EXPIRED_CODES and attempt == 1:
+                self._auth.invalidate_token()
+                continue
+            data = payload.get("data") or {}
+            if payload.get("code") != 200 or not data.get("unc"):
+                raise EcoleDirectePersoApiError(f"televersement : code {payload.get('code')} — "
+                                                f"{payload.get('message') or ''}")
+            return {"unc": data["unc"], "libelle": data.get("libelle") or chemin.name}
+        raise AssertionError("unreachable")
 
     async def poster_message(self, message: dict[str, Any]) -> Any:
         """Brouillon ou envoi d'un message (appelé uniquement par messagerie_ecriture,
