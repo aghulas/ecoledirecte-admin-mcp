@@ -134,7 +134,9 @@ async def ed_perso_contacts_rechercher(type: str, nom: str = "") -> Any:
 
 @mcp.tool()
 async def ed_perso_message_ecrire(sujet: str, texte: str, destinataires: list[dict[str, Any]],
-                                  mode: str = "brouillon", confirm: bool = False) -> Any:
+                                  mode: str = "brouillon", confirm: bool = False,
+                                  pieces_jointes: list[str] | None = None,
+                                  plafond_destinataires: int | None = None) -> Any:
     """ÉCRITURE — prépare un message de la messagerie EcoleDirecte du compte connecté
     (compte PARTAGÉ du secrétariat : il part sous son nom). `mode` = 'brouillon'
     (déposé dans les brouillons ; l'utilisateur relit et envoie lui-même depuis
@@ -148,9 +150,15 @@ async def ed_perso_message_ecrire(sujet: str, texte: str, destinataires: list[di
     Sans confirm=True (par défaut) : SIMULATION — destinataires résolus, objet et
     texte affichés, rien n'est écrit. Il faut TOUJOURS montrer la simulation à
     l'utilisateur et obtenir son accord explicite avant confirm=True.
+    `pieces_jointes` = chemins de fichiers locaux (pdf, png, jpg, docx ; 20 Mo et 5
+    fichiers au plus ; sous ED_PERSO_PJ_RACINES, défaut ~/Charlemagne ; jamais de
+    document bancaire), téléversés seulement à l'écriture. `plafond_destinataires`
+    = relève le plafond pour un BROUILLON uniquement (jusqu'à 150) ; les parents en
+    double (fratries) sont dédoublonnés.
     Garde-fous : ED_PERSO_MESSAGERIE_ACTIF=1 ; plafond ED_PERSO_MESSAGERIE_MAX_DEST
-    (défaut 30) ; messagerie inactive refusée ; pas de pièce jointe ; journal."""
-    return await preparer_message(_get_client(), sujet, texte, destinataires, mode, confirm)
+    (défaut 30) ; messagerie inactive refusée ; journal."""
+    return await preparer_message(_get_client(), sujet, texte, destinataires, mode, confirm,
+                                  pieces_jointes, plafond_destinataires)
 
 
 @mcp.tool()

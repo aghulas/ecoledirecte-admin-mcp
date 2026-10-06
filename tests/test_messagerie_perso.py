@@ -144,3 +144,73 @@ async def test_mode_et_champs_invalides(env):
         await me.preparer_message(env, "", "Texte", [{"type": "personnel", "id": 30}])
     with pytest.raises(me.MessagerieError):
         await me.resoudre_destinataires(env, [{"type": "personnel", "id": 30, "champ": "bcc"}])
+
+
+# --- pièces jointes et plafond (06/10/2026) -----------------------------------
+class FakeClientPJ(FakeClient):
+    def __init__(self):
+        super().__init__()
+        self.televerses = []
+
+    async def televerser_piece_jointe(self, p):
+        self.televerses.append(p.name)
+        return {"unc": f"\\\\STOCK-TMP\\tmp\\x\\{p.name}", "libelle": p.name}
+
+
+def _pdf(d, nom):
+    p = d / nom
+    p.write_bytes(b"%PDF-1.4\n")
+    return p
+
+
+def test_pieces_jointes_controles(tmp_path, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_PJ_RACINES", str(tmp_path / "ok"))
+    (tmp_path / "ok").mkdir()
+    bon = _pdf(tmp_path / "ok", "invitation.pdf")
+    assert me.verifier_pieces_jointes([str(bon)]) == [bon.resolve()]
+    with pytest.raises(me.MessagerieError):  # hors des dossiers autorisés
+        me.verifier_pieces_jointes([str(_pdf(tmp_path, "ailleurs.pdf"))])
+    with pytest.raises(me.MessagerieError):  # bancaire
+        me.verifier_pieces_jointes([str(_pdf(tmp_path / "ok", "Mandat SEPA.pdf"))])
+    exe = tmp_path / "ok" / "script.sh"
+    exe.write_text("x")
+    with pytest.raises(me.MessagerieError):  # extension
+        me.verifier_pieces_jointes([str(exe)])
+    with pytest.raises(me.MessagerieError):  # introuvable
+        me.verifier_pieces_jointes([str(tmp_path / "ok" / "absent.pdf")])
+
+
+async def test_brouillon_avec_piece_jointe(tmp_path, monkeypatch):
+    monkeypatch.setattr(me, "JOURNAL", tmp_path / "messages.csv")
+    monkeypatch.setenv("ED_PERSO_PJ_RACINES", str(tmp_path))
+    pdf = _pdf(tmp_path, "invitation.pdf")
+    c = FakeClientPJ()
+    dest = [{"type": "famille", "id_eleve": 7, "responsable": "tous", "champ": "cci"}]
+    sim = await me.preparer_message(c, "Objet", "Texte", dest, pieces_jointes=[str(pdf)])
+    assert sim["ecrit"] is False and c.televerses == [] and sim["pieces_jointes"][0].startswith("invitation.pdf")
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    r = await me.preparer_message(c, "Objet", "Texte", dest, confirm=True, pieces_jointes=[str(pdf)])
+    assert r["ecrit"] and c.televerses == ["invitation.pdf"]
+    f = c.postes[0]["files"]
+    assert f == [{"id": "0", "libelle": "invitation.pdf", "displayText": "invitation.pdf",
+                  "unc": "\\\\STOCK-TMP\\tmp\\x\\invitation.pdf"}]
+
+
+async def test_plafond_releve_seulement_en_brouillon(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_MAX_DEST", "1")
+    dest = [{"type": "famille", "id_eleve": 7, "responsable": "tous"}]
+    with pytest.raises(me.MessagerieError):
+        await me.preparer_message(env, "O", "T", dest)
+    sim = await me.preparer_message(env, "O", "T", dest, plafond_destinataires=2)
+    assert sim["nb_destinataires"] == 2
+    with pytest.raises(me.MessagerieError):
+        await me.preparer_message(env, "O", "T", dest, mode="envoi", plafond_destinataires=2)
+    with pytest.raises(me.MessagerieError):
+        await me.preparer_message(env, "O", "T", dest, plafond_destinataires=10_000)
+
+
+async def test_fratrie_dedoublonnee(env):
+    dest = [{"type": "famille", "id_eleve": 7, "responsable": "tous"},
+            {"type": "famille", "id_eleve": 7, "responsable": "1"}]
+    sim = await me.preparer_message(env, "O", "T", dest)
+    assert sim["nb_destinataires"] == 2
