@@ -18,6 +18,11 @@ se plaçant dans l'espace d'une famille, exactement comme `etat_pieces` :
                sont présentes) ; chaque document : {id, libelle, date, type,
                signatureDemandee, etatSignatures, signature, idEleve?}.
 
+Les documents sont publiés COMPTE PAR COMPTE (constat du 06/10/2026 : un
+mandat SEPA présent chez un seul des deux parents, et le même document
+administratif sous deux identifiants différents). Sauf compte précisé, on lit
+donc tous les comptes rattachés à l'élève et on fusionne.
+
 Aucun document n'est téléchargé ni ouvert : seuls les intitulés et dates sont
 lus. Pour une vue « école », on interroge UNE famille par classe et on regroupe
 les documents par (intitulé, date) : les factures et les documents propres à
@@ -110,21 +115,60 @@ async def _lire_documents_famille(admin_client, compte: dict[str, Any], archive:
         await fam.http.aclose()
 
 
+def _libelle_compte(compte: dict[str, Any]) -> str:
+    return f"{compte.get('civilite', '')} {compte['nom']} {compte['prenom']} (id {compte['id']})".strip()
+
+
+def fusionner_comptes(par_compte: list[tuple[dict[str, Any], list[dict[str, Any]]]]) -> list[dict[str, Any]]:
+    """[(compte, docs)] → un document par (rubrique, intitulé, date, type), avec
+    les comptes qui le voient et l'identifiant du document dans chacun (il
+    diffère d'un compte à l'autre). `seulement_pour` si tous ne le voient pas."""
+    tous = [_libelle_compte(c) for c, _ in par_compte]
+    fusion: dict[tuple, dict[str, Any]] = {}
+    for compte, docs in par_compte:
+        nom = _libelle_compte(compte)
+        for d in docs:
+            cle = (d["rubrique"], _norm(d["libelle"]), d.get("date") or "", d.get("type") or "")
+            e = fusion.get(cle)
+            if e is None:
+                e = fusion[cle] = {**d, "ids_par_compte": {}, "visible_pour": []}
+            e["ids_par_compte"][str(compte["id"])] = d.get("id")
+            if nom not in e["visible_pour"]:
+                e["visible_pour"].append(nom)
+    out = []
+    for e in fusion.values():
+        if len(tous) > 1 and len(e["visible_pour"]) < len(tous):
+            e["seulement_pour"] = e["visible_pour"]
+        out.append(e)
+    out.sort(key=lambda d: (d.get("date") or ""), reverse=True)
+    return out
+
+
 async def documents_famille(admin_client, id_eleve: int, compte_id: int | None = None,
                             archive: str = "") -> dict[str, Any]:
     res = await dp.resoudre_eleve_famille(admin_client, id_eleve)
-    compte = dp.choisir_compte(res, compte_id)
-    docs = await _lire_documents_famille(admin_client, compte, archive)
+    comptes = [dp.choisir_compte(res, compte_id)] if compte_id is not None else res["comptes"]
+    par_compte = []
+    for i, compte in enumerate(comptes):
+        if i:
+            await asyncio.sleep(0.3)
+        par_compte.append((compte, await _lire_documents_famille(admin_client, compte, archive)))
+    docs = fusionner_comptes(par_compte)
     eleve = res["eleve"]
-    return {
+    out = {
         "eleve": f"{eleve.get('nom', '')} {eleve.get('prenom', '')} ({eleve.get('libelleClasse') or eleve.get('idClasse')})".strip(),
-        "compte_famille": f"{compte['nom']} {compte['prenom']} (id {compte['id']}, {compte.get('type')})",
+        "comptes_lus": [f"{_libelle_compte(c)}, {c.get('type')}" for c in comptes],
         "archive": archive or "année en cours",
         "nb_documents": len(docs),
         "documents": docs,
-        "note": ("Documents visibles dans l'espace Documents de la famille (sans notification "
-                 "à la publication). Les pièces à verser sont dans ed_admin_pieces_etat."),
+        "note": ("Documents visibles dans l'espace Documents (sans notification à la publication). "
+                 "Publiés compte par compte : `visible_pour` / `seulement_pour` indiquent quel parent "
+                 "les voit ; pour télécharger, passer l'id du document dans le compte voulu "
+                 "(`ids_par_compte`). Les pièces à verser sont dans ed_admin_pieces_etat."),
     }
+    if any(d.get("seulement_pour") for d in docs):
+        out["attention"] = "Certains documents ne sont visibles que d'un des parents (voir `seulement_pour`)."
+    return out
 
 
 def regrouper_par_classe(par_classe: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
@@ -156,7 +200,7 @@ async def documents_ecole(admin_client, classe: str | None = None, archive: str 
     # Une famille voit aussi les documents de ses AUTRES enfants : on choisit donc,
     # pour chaque classe, une famille dont tous les enfants sont dans cette classe
     # (à défaut, la première trouvée, signalée dans `representant_avec_fratrie`).
-    representants: dict[str, dict[str, Any]] = {}
+    representants: dict[str, list[dict[str, Any]]] = {}
     avec_fratrie: set[str] = set()
     for e in sorted(eleves, key=lambda x: int(x.get("id", 0))):
         lib = (e.get("libelleClasse") or "").strip()
@@ -174,7 +218,7 @@ async def documents_ecole(admin_client, classe: str | None = None, archive: str 
         classes_enfants = {str(c.get("idClasse")) for c in compte.get("enfants") or []}
         seule_classe = classes_enfants <= {str(e.get("idClasse"))}
         if lib not in representants or seule_classe:
-            representants[lib] = compte
+            representants[lib] = res.get("comptes") or [compte]
             if seule_classe:
                 avec_fratrie.discard(lib)
             else:
@@ -184,21 +228,26 @@ async def documents_ecole(admin_client, classe: str | None = None, archive: str 
 
     par_classe: dict[str, list[dict[str, Any]]] = {}
     erreurs = {}
-    for lib, compte in representants.items():
-        try:
-            par_classe[lib] = await _lire_documents_famille(admin_client, compte, archive)
-        except Exception as exc:  # noqa: BLE001 — une classe en erreur ne bloque pas les autres
-            erreurs[lib] = str(exc)
-        await asyncio.sleep(0.3)
+    for lib, comptes in representants.items():
+        # tous les comptes de la famille (les documents sont publiés compte par compte)
+        docs: list[dict[str, Any]] = []
+        for compte in comptes:
+            try:
+                docs.extend(await _lire_documents_famille(admin_client, compte, archive))
+            except Exception as exc:  # noqa: BLE001 — une classe en erreur ne bloque pas les autres
+                erreurs[lib] = str(exc)
+            await asyncio.sleep(0.3)
+        if docs or lib not in erreurs:
+            par_classe[lib] = docs
     out = regrouper_par_classe(par_classe)
     out["archive"] = archive or "année en cours"
     if erreurs:
         out["erreurs"] = erreurs
     if avec_fratrie:
         out["representant_avec_fratrie"] = sorted(avec_fratrie)
-    out["note"] = ("Reconstitué en lisant l'espace Documents d'UNE famille par classe (supervision en "
-                   "lecture seule) : un document diffusé à quelques familles seulement peut ne pas "
-                   "apparaître. Factures, documents nominatifs et documents à signer (mandat SEPA…) "
+    out["note"] = ("Reconstitué en lisant l'espace Documents d'UNE famille par classe, tous ses comptes "
+                   "(supervision en lecture seule) : un document diffusé à quelques familles seulement "
+                   "peut ne pas apparaître. Factures, documents nominatifs et documents à signer (mandat SEPA…) "
                    "sont écartés. Une publication dans Documents n'envoie aucune notification aux "
                    "familles ; l'auteur n'est pas exposé par l'API.")
     return out
@@ -247,7 +296,22 @@ async def telecharger_document(admin_client, id_eleve: int, document_id: int,
                                compte_id: int | None = None, archive: str = "") -> dict[str, Any]:
     dossier = dossier_telechargements()
     res = await dp.resoudre_eleve_famille(admin_client, id_eleve)
-    compte = dp.choisir_compte(res, compte_id)
+    comptes = [dp.choisir_compte(res, compte_id)] if compte_id is not None else res["comptes"]
+    derniere: ToolError | None = None
+    for compte in comptes:
+        try:
+            return await _telecharger_dans_compte(admin_client, compte, document_id, archive, dossier)
+        except DocumentAbsent as exc:  # l'id appartient peut-être à l'autre parent
+            derniere = exc
+    raise derniere or ToolError("Aucun compte famille.")
+
+
+class DocumentAbsent(ToolError):
+    """Document absent de l'espace du compte interrogé."""
+
+
+async def _telecharger_dans_compte(admin_client, compte: dict[str, Any], document_id: int,
+                                   archive: str, dossier: Path) -> dict[str, Any]:
     fam = await dp.ouvrir_supervision(admin_client, compte)
     try:
         url = (f"{dp.WWW_API_BASE}familledocuments.awp?archive={archive}"
@@ -265,8 +329,8 @@ async def telecharger_document(admin_client, id_eleve: int, document_id: int,
                 if isinstance(d, dict) and int(d.get("id", -1)) == int(document_id):
                     brut = {"rubrique": rubrique, **d}
         if not brut:
-            raise ToolError(f"Document {document_id} absent de l'espace Documents de cette famille "
-                            "(voir ed_admin_documents_famille).")
+            raise DocumentAbsent(f"Document {document_id} absent de l'espace Documents de cette famille "
+                                 "(voir ed_admin_documents_famille, champ ids_par_compte).")
         doc = resume_document(brut, brut["rubrique"])
         motif = refus_document(doc)
         if motif:
@@ -290,6 +354,7 @@ async def telecharger_document(admin_client, id_eleve: int, document_id: int,
     with os.fdopen(fd, "wb") as f:
         f.write(contenu)
     return {"document": {k: doc[k] for k in ("id", "rubrique", "libelle", "date")},
+            "compte": _libelle_compte(compte),
             "fichier": str(chemin), "taille_octets": len(contenu),
             "telecharge_le": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "note": "Copie locale (droits 600, jamais écrasée). Lecture seule côté EcoleDirecte."}
