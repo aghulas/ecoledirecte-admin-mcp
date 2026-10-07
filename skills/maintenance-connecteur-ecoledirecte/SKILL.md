@@ -14,6 +14,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Créer une branche pour un changement non trivial.
 - Jamais de données d'élèves ou de familles dans un fichier versionné (lectures manuelles sous `~/Charlemagne/`). Dépôt public : aucun chemin de serveur propre à l'école (valeurs par défaut génériques, chemins réels dans la configuration locale). Aucun jeton dans les remotes (`git remote -v` masqué).
 - Le connecteur ne manipule jamais de mot de passe, d'IBAN ni de BIC.
+- Découvrir un endpoint : lire le JavaScript public du front (`www.ecoledirecte.com` → `chunk-*.js`, `main-*.js`), téléchargé sur le Mac dans un dossier temporaire hors dépôt (le cloud n'atteint pas ecoledirecte.com), supprimé après usage. API classique : `api.ecoledirecte.com/v3/….awp` (corps `data=<JSON>`) ; API REST du front (`withRestApi`) : `api.ecoledirecte.com/restv3/ws/…` (corps JSON).
 
 ## Messagerie perso (écriture)
 
@@ -22,11 +23,24 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Plafonds : `ED_PERSO_MESSAGERIE_MAX_DEST` (30) pour un envoi, `ED_PERSO_MESSAGERIE_MAX_DEST_BROUILLON` (150) pour un brouillon via `plafond_destinataires`.
 - Validation réelle : uniquement en brouillon, relu (`ed_perso_message_lire`, `boite="draft"`), jamais envoyé sans accord explicite de Rémi.
 - **Jamais de message écrit au nom d'un autre compte par la supervision admin** : EcoleDirecte désactive l'envoi et les brouillons en mode supervision (décision du 01/10/2026, rappelée le 07/10) ; l'écriture se fait uniquement avec les identifiants du compte lui-même.
-- Compte du connecteur perso : **le compte personnel de chaque utilisateur** (depuis le 07/10/2026 ; avant, le compte partagé du secrétariat) — quand le connecteur est diffusé, chacun configure ses propres identifiants. Identifiant dans `~/.ecoledirecte-perso-mcp/config.json`, mot de passe dans le Trousseau (service `ecoledirecte-perso-mcp`), jetons de double authentification dans `session.json`. Changer de compte ou de mot de passe : sauvegarder ces deux fichiers, puis Rémi lance lui-même dans Terminal `.venv/bin/python -m ecoledirecte_perso_mcp.auth setup` puis `… auth login` (saisie masquée, question de sécurité éventuelle) et relance Claude Desktop. Erreur « Identifiant ou mot de passe invalide (505) » répétée = mot de passe changé.
+
+## Compte perso et authentification
+
+- Compte du connecteur perso : **le compte personnel de chaque utilisateur** (depuis le 07/10/2026 ; avant, le compte partagé du secrétariat) — quand le connecteur est diffusé, chacun configure ses propres identifiants. Identifiant dans `~/.ecoledirecte-perso-mcp/config.json`, mot de passe dans le Trousseau (service `ecoledirecte-perso-mcp`), jetons dans `session.json` (token, et `cn`/`cv` de double authentification).
+- Changer de compte ou de mot de passe : sauvegarder ces fichiers, puis l'utilisateur lance lui-même dans Terminal `cd ~/dev/ecoledirecte-admin-mcp`, `.venv/bin/python -m ecoledirecte_perso_mcp.auth setup` puis `… auth login`, et relance Claude Desktop. Erreur « Identifiant ou mot de passe invalide (505) » répétée = mot de passe changé.
+- **Double authentification** : le login renvoie le code 250 et un jeton dans l'en-tête de réponse `2FA-Token`. Deux formes, gérées par `auth login` (v0.9.2, 07/10/2026) :
+  - QCM (question secrète) : `connexion/doubleauth.awp` get/post ;
+  - **code TOTP** si l'utilisateur a activé la validation par application d'authentification dans son compte (`data.totp = true`) : `POST restv3/ws/auth/totp`, JSON `{codeVerification}`, en-tête `2FA-Token`, 403 = code refusé — la commande demande le code à 6 chiffres.
+  Dans les deux cas `cn`/`cv` sont mémorisés et la reconnexion automatique se fait ensuite sans code (`doubleAuthMemorisee: true` dans `ed_perso_session_info`). Symptôme dans Claude : « Le compte demande une double authentification » → l'utilisateur relance `auth login` dans Terminal, puis redémarre Claude Desktop (le serveur garde l'ancienne session en mémoire). Sur une version antérieure à 0.9.2, « Double auth (get) refusée (code 520/550) » = compte en TOTP.
+- Vérifier une reconnexion sans code : script temporaire `PersoAuth()`, `session.token = ""`, `await auth.login(client)` — n'afficher que le compte et la présence de `cn`.
 
 ## Espace Documents (admin)
 
 - Les documents sont publiés **compte par compte** (chaque parent a son espace ; le même document peut avoir un id différent chez chacun, un mandat SEPA peut n'exister que chez un parent). `documents.py` lit tous les comptes rattachés à l'élève et fusionne (`visible_pour`, `seulement_pour`, `ids_par_compte`) ; le téléchargement cherche l'id dans chaque compte (v0.9.1, 07/10/2026). Toute nouvelle lecture par supervision famille doit faire de même.
+
+## Lire la messagerie du secrétariat
+
+- Le connecteur perso ne lit que la boîte du compte connecté. La boîte EcoleDirecte du secrétariat se consulte par les notifications qu'EcoleDirecte envoie à secretariat@ (Outlook partagé, connecteur Microsoft 365 : `mailboxOwnerEmail=secretariat@…`, `sender=information@ecoledirecte.fr`) : objet et texte complet du message, mais pas les pièces jointes (« les N pièce(s) jointe(s) » à ouvrir dans EcoleDirecte).
 
 ## Tests
 
@@ -47,7 +61,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
   Claude-Session: <lien de la session>
   ```
   (reprendre les lignes d'attribution indiquées par la session courante).
-- Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre.
+- Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre (numéro de correctif pour un correctif).
 - Fusion `--ff-only` dans `main`, push, suppression de la branche.
 - Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure.
 - Rappeler à Rémi de **redémarrer complètement Claude Desktop** : les outils d'une conversation déjà ouverte gardent l'ancienne version.
@@ -57,7 +71,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 
 - `README.md` du dépôt (tableau des outils, sections dédiées), version dans `pyproject.toml`, `package-data` si nouveaux fichiers de données.
 - `openapi/ecoledirecte-wrapper.openapi.yaml` (Swagger 2.0 pour Copilot Studio) : aligner les opérations, ajouter les `definitions`, incrémenter la version, valider avec `openapi-spec-validator` (attention aux virgules dans les descriptions en style `{ … }` : les mettre entre guillemets). Supervision, dépôts, demandes, documents et messagerie restent hors de ce contrat.
-- Spec du projet `claude/spec-connecteur-mcp-ecoledirecte.md` : lire, modifier, réécrire en entier (`project_write`) — statut et dernier commit en tête, tableaux d'outils (§3/§4), écritures (§5), limites (§8), incidents et enseignements (§9).
+- Spec du projet `claude/spec-connecteur-mcp-ecoledirecte.md` : lire, modifier, réécrire en entier (`project_write`) — statut et dernier commit en tête, authentification (§2), tableaux d'outils (§3/§4), écritures (§5), limites (§8), incidents et enseignements (§9).
 - Si l'usage change, mettre à jour aussi la skill `ecoledirecte-communication-familles`.
 
 ## Skills et GitHub
