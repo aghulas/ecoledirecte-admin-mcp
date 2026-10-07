@@ -492,9 +492,11 @@ async def ed_admin_documents_famille(id_eleve: int, compte_id: int | None = None
     intitulé, date, type, signature demandée et son état. Une publication dans
     Documents ne notifie PAS les familles (contrairement à un message). Ouvre une
     supervision en lecture seule ; aucun document n'est ouvert ni téléchargé.
-    `id_eleve` = un élève de la famille ; `compte_id` = compte famille précis
-    (par défaut le responsable) ; `archive` = année d'archive (vide = en cours).
-    Les pièces à verser sont dans ed_admin_pieces_etat."""
+    `id_eleve` = un élève de la famille ; `compte_id` = un compte précis ; par
+    défaut TOUS les comptes rattachés (les documents sont publiés compte par
+    compte : `visible_pour` / `seulement_pour` disent quel parent voit quoi,
+    `ids_par_compte` donne l'id à télécharger) ; `archive` = année d'archive
+    (vide = en cours). Les pièces à verser sont dans ed_admin_pieces_etat."""
     return await documents_famille(_get_client(), id_eleve, compte_id, archive)
 
 

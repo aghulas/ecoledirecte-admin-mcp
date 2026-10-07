@@ -106,3 +106,71 @@ def test_telechargement_desactive_sans_dossier(monkeypatch):
     monkeypatch.delenv("ED_ADMIN_DOCUMENTS_DIR", raising=False)
     with pytest.raises(ToolError):
         docs_mod.dossier_telechargements()
+
+
+# --- documents publiés compte par compte (06/10/2026) -------------------------
+P1 = {"id": 951, "civilite": "Mme", "nom": "X", "prenom": "Mère", "type": "responsable"}
+P2 = {"id": 952, "civilite": "M.", "nom": "X", "prenom": "Père", "type": "responsable"}
+
+
+def test_fusion_par_compte():
+    fact = {"rubrique": "Factures", "libelle": "Facture 1", "date": "2026-09-29", "type": "Facture"}
+    projet = {"rubrique": "Administratifs", "libelle": "Projet", "date": "2026-09-28", "type": "Doc"}
+    sepa = {"rubrique": "Administratifs", "libelle": "Mandat SEPA", "date": "2026-09-24", "type": "",
+            "signature_demandee": True}
+    docs = docs_mod.fusionner_comptes([
+        (P1, [{**fact, "id": 801}, {**projet, "id": 338}]),
+        (P2, [{**fact, "id": 801}, {**projet, "id": 339}, {**sepa, "id": 12}]),
+    ])
+    par = {d["libelle"]: d for d in docs}
+    assert len(docs) == 3
+    assert par["Projet"]["ids_par_compte"] == {"951": 338, "952": 339}
+    assert "seulement_pour" not in par["Projet"]
+    assert par["Mandat SEPA"]["seulement_pour"] == ["M. X Père (id 952)"]
+
+
+def test_fusion_un_seul_compte_sans_seulement_pour():
+    d = {"rubrique": "Factures", "libelle": "F", "date": "2026-09-29", "type": "Facture", "id": 1}
+    docs = docs_mod.fusionner_comptes([(P1, [d])])
+    assert "seulement_pour" not in docs[0]
+
+
+async def test_documents_famille_lit_tous_les_comptes(monkeypatch):
+    async def resoudre(client, id_eleve, **k):
+        return {"eleve": {"nom": "X", "prenom": "Enfant", "libelleClasse": "PS"},
+                "comptes": [P1, P2], "compte": P1}
+
+    lus = []
+
+    async def lire(client, compte, archive=""):
+        lus.append(compte["id"])
+        return [{"rubrique": "Factures", "libelle": "F", "date": "2026-09-29", "type": "Facture", "id": 1}]
+
+    monkeypatch.setattr(docs_mod.dp, "resoudre_eleve_famille", resoudre)
+    monkeypatch.setattr(docs_mod, "_lire_documents_famille", lire)
+    monkeypatch.setattr(docs_mod.asyncio, "sleep", lambda s: _noop())
+    r = await docs_mod.documents_famille(object(), 1)
+    assert lus == [951, 952] and r["nb_documents"] == 1 and len(r["comptes_lus"]) == 2
+    lus.clear()
+    await docs_mod.documents_famille(object(), 1, compte_id=952)
+    assert lus == [952]
+
+
+async def test_telechargement_cherche_dans_l_autre_compte(monkeypatch, tmp_path):
+    monkeypatch.setenv("ED_ADMIN_DOCUMENTS_DIR", str(tmp_path))
+
+    async def resoudre(client, id_eleve, **k):
+        return {"eleve": {}, "comptes": [P1, P2], "compte": P1}
+
+    essais = []
+
+    async def dans_compte(client, compte, document_id, archive, dossier):
+        essais.append(compte["id"])
+        if compte["id"] == 951:
+            raise docs_mod.DocumentAbsent("absent")
+        return {"compte": compte["id"]}
+
+    monkeypatch.setattr(docs_mod.dp, "resoudre_eleve_famille", resoudre)
+    monkeypatch.setattr(docs_mod, "_telecharger_dans_compte", dans_compte)
+    r = await docs_mod.telecharger_document(object(), 1, 339)
+    assert essais == [951, 952] and r["compte"] == 952
