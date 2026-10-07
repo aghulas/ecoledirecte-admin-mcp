@@ -1,6 +1,6 @@
 ---
 name: "ecoledirecte-communication-familles"
-description: "Informer des familles de l'École Sainte-Marie par la messagerie EcoleDirecte (message du secrétariat à une classe, un niveau ou quelques familles, avec pièce jointe) — brouillon dans la boîte du secrétariat, relu et envoyé par le secrétariat."
+description: "Informer des familles de l'École Sainte-Marie par la messagerie EcoleDirecte (message à une classe, un niveau ou quelques familles, avec pièce jointe) — brouillon préparé dans la boîte EcoleDirecte de l'utilisateur, relu et envoyé par lui."
 ---
 
 # Communication aux familles via EcoleDirecte
@@ -18,11 +18,13 @@ description: "Informer des familles de l'École Sainte-Marie par la messagerie E
 
 - Vouvoiement, « Madame, Monsieur, », phrases courtes ; objet explicite (événement + date). `texte` en texte brut, paragraphes séparés par une ligne vide, signature comprise.
 - Dates absolues ; lieu complet ; ce que la famille doit faire et avant quand.
-- Signature : « Le secrétariat – École Sainte Marie ». Contact : répondre au message, ou support@saintemarie-fontainebleau.fr pour une difficulté de connexion.
+- Signature : celle de l'expéditeur réel (le message part sous le nom du compte connecté) — pour Rémi, son nom et sa fonction ; « Le secrétariat – École Sainte Marie » seulement si c'est le secrétariat qui envoie depuis sa propre boîte. Contact : répondre au message, ou support@saintemarie-fontainebleau.fr pour une difficulté de connexion.
 - Pas de données d'autres familles dans un message collectif. Destinataires toujours en **copie cachée**.
 - Montrer le texte à Rémi et l'ajuster avant toute préparation.
 
-## 3. Préparer le brouillon (serveur `ecoledirecte-perso`, compte du secrétariat)
+## 3. Préparer le brouillon (serveur `ecoledirecte-perso`, compte personnel de l'utilisateur)
+
+Depuis le 07/10/2026, le connecteur perso utilise **le compte personnel de chaque utilisateur** (sa messagerie vers les familles doit être active : `parametrage.destFamille` dans `ed_perso_messages_list`). Vérifier le compte connecté avec `ed_perso_session_info`.
 
 1. Destinataires : les élèves de la classe ou du niveau (`ed_perso_classe_eleves`, ou `ed_admin_eleves_search`), puis une entrée par élève `{"type": "famille", "id_eleve": N, "responsable": "tous", "champ": "cci"}` ; un personnel : `{"type": "personnel", "id": N, "champ": …}` (ids : `ed_perso_contacts_rechercher`). Les responsables d'une fratrie ne sont comptés qu'une fois. Ex. du 06/10/2026 : deux classes de CM2 → 114 responsables.
 2. Pièces jointes : fichiers sous `~/Charlemagne` (pdf, png, jpg, docx ; 5 au plus, 20 Mo) — par ex. le PDF récupéré dans l'espace Documents. Documents bancaires refusés.
@@ -31,11 +33,12 @@ description: "Informer des familles de l'École Sainte-Marie par la messagerie E
 
 ## 4. Envoi
 
-- **C'est le secrétariat (Agnès Coutouly) qui relit et envoie** le brouillon depuis la boîte du secrétariat (dossier Brouillons). Préparer pour Rémi un mail à secretariat@ (et direction@ si besoin), en vouvoiement, indiquant l'objet du brouillon, le nombre de destinataires et la pièce jointe — brouillon Outlook que Rémi envoie lui-même.
+- Le brouillon est dans la boîte EcoleDirecte **de l'utilisateur** (dossier Brouillons) : c'est lui qui le relit et l'envoie, sous son nom.
+- Si le message doit venir du **secrétariat** (signature, réponses attendues dans sa boîte) : ne pas l'écrire depuis un autre compte ; fournir au secrétariat le texte, la liste des classes et la pièce jointe, avec un brouillon de mail Outlook à secretariat@ (vouvoiement) que Rémi envoie lui-même. Jamais par la supervision admin (EcoleDirecte bloque l'écriture en supervision).
 - Jamais d'envoi direct par le connecteur sans accord explicite de Rémi pour ce message.
 - Après envoi, vérifier dans `ed_perso_messages_list(boite="sent")`.
 
 ## 5. Points d'attention
 
-- Le compte perso est celui du secrétariat : une session navigateur ouverte en même temps peut casser le jeton (rotation à chaque appel) ; en cas d’erreur « Identifiant ou mot de passe invalide (505) » répétée, le mot de passe du compte a probablement changé — Rémi met à jour le Trousseau macOS (`ecoledirecte-perso-mcp`) ; le connecteur ne gère jamais les mots de passe.
+- Une session EcoleDirecte ouverte dans un navigateur sur le même compte peut casser le jeton (rotation à chaque appel). En cas d’erreur « Identifiant ou mot de passe invalide (505) » répétée, le mot de passe a probablement changé : l'utilisateur relance lui-même `auth setup` puis `auth login` (voir skill `maintenance-connecteur-ecoledirecte`) ; le connecteur ne gère jamais les mots de passe.
 - Si `ED_PERSO_MESSAGERIE_ACTIF` n'est pas activé : fournir le texte prêt à coller et la liste des destinataires (classes) pour une saisie manuelle.

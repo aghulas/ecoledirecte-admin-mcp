@@ -9,8 +9,8 @@ Destinataires : contacts renvoyés par messagerie/contacts/{familles,personnels}
 de `to_cc_cci` (to|cc|cci) et, pour une famille, `type="1"` ; regroupés par type
 (`groupesDestinataires=[{destinataires:[…], selection:{type}}]`).
 
-Le compte connecté est le compte PARTAGÉ du secrétariat (accord de sa titulaire, 01/10/2026) :
-les messages partent sous son nom. Garde-fous :
+Le compte connecté est le compte personnel de l'utilisateur (ses propres identifiants) :
+les messages partent sous son nom et les brouillons sont dans sa boîte. Garde-fous :
   - SIMULATION par défaut : destinataires résolus, objet et texte affichés, rien n'est écrit ;
   - `mode="brouillon"` (déposé dans les brouillons, l'utilisateur l'envoie lui-même depuis
     EcoleDirecte) ou `mode="envoi"` ; dans les deux cas confirm=True après accord explicite ;

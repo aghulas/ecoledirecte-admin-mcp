@@ -7,8 +7,8 @@ internes non documentées, **en lecture seule à une exception près**
 - **`ecoledirecte-admin`** — console admin (`admin.ecoledirecte.com`) :
   annuaire des comptes, classes, paramétrages, stats, synchros Charlemagne.
   Voir [`docs/cartographie-api-admin.md`](docs/cartographie-api-admin.md).
-- **`ecoledirecte-perso`** — espace personnel (`www.ecoledirecte.com`) d'un compte
-  secrétariat : consultation des élèves par classe, coordonnées détaillées des
+- **`ecoledirecte-perso`** — espace personnel (`www.ecoledirecte.com`) du compte
+  personnel de chaque utilisateur : consultation des élèves par classe, coordonnées détaillées des
   responsables (adresse/téléphones/emails), messagerie (liste seule), agenda, RDV,
   documents, post-it. Voir
   [`docs/cartographie-api-personnel.md`](docs/cartographie-api-personnel.md).
@@ -194,7 +194,10 @@ Régénérer après une évolution de l'admin EcoleDirecte :
 
 ## Serveur espace personnel (`ecoledirecte-perso`)
 
-Compte **personnel/secrétariat** de l'école, avec **l'accord de la personne**.
+Chaque utilisateur configure **son propre compte personnel** EcoleDirecte (personnel
+administratif ou enseignant) : identifiant dans `~/.ecoledirecte-perso-mcp/config.json`,
+mot de passe dans le Trousseau macOS. Les messages partent sous son nom et ses brouillons
+sont dans sa boîte. Ne pas utiliser le compte d'une autre personne.
 API `apip.ecoledirecte.com/v3/` (site www.ecoledirecte.com).
 
 ### Connexion (login interactif, une fois)
@@ -212,15 +215,19 @@ cd ~/dev/ecoledirecte-admin-mcp
   la question de sécurité si EcoleDirecte la pose (réponds au numéro proposé).
 - Mot de passe : Trousseau macOS, service `ecoledirecte-perso-mcp`.
 - Jetons + `cn`/`cv` : `~/.ecoledirecte-perso-mcp/session.json` (600).
-- Pour basculer sur un autre compte (ex. compte dédié une fois créé) : relancer
-  `auth login` avec le nouvel identifiant, rien d'autre à changer.
+- Pour changer de compte ou après un changement de mot de passe : mettre de côté
+  `config.json` et `session.json` de `~/.ecoledirecte-perso-mcp/`, lancer
+  `auth setup` (identifiant + mot de passe) puis `auth login`, et redémarrer le
+  client MCP. Une erreur « identifiant ou mot de passe invalide (505) » répétée
+  signale un mot de passe changé.
 
 ### Précautions importantes
 
-- **Compte d'un tiers** : n'utiliser qu'avec l'accord explicite de la personne.
-- **Jeton tournant** : si cette personne (ou toi) est connectée sur EcoleDirecte
-  dans un navigateur au même moment, les jetons se cassent mutuellement. Éviter
-  l'usage simultané.
+- **Son propre compte uniquement** : chaque utilisateur du connecteur utilise ses
+  propres identifiants ; jamais le compte d'un tiers.
+- **Jeton tournant** : une session EcoleDirecte ouverte dans un navigateur sur le
+  même compte au même moment casse les jetons de l'autre côté. Éviter l'usage
+  simultané.
 - **Aucune ouverture de message** : les outils listent la messagerie mais
   n'ouvrent jamais un message (ce qui le marquerait « lu » chez le destinataire) —
   bloqué dans `client.py`, testé.
