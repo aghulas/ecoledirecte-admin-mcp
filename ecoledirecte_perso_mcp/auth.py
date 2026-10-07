@@ -4,9 +4,12 @@ Flux (voir docs/cartographie-api-personnel.md §3), plus complexe que l'admin :
   1. GET  login.awp?gtk=1   → cookie GTK, à renvoyer en header X-Gtk.
   2. POST login.awp  data={identifiant, motdepasse, isReLogin:false, uuid:"", fa:[...]}
   3. code 200 → {token, data.accounts[0]{id, typeCompte}}.
-     code 250 → double authentification (QCM question secrète) requise.
+     code 250 → double authentification requise : QCM (question secrète) ou, si
+                l'utilisateur l'a activée, code TOTP (data.totp=true) ; jeton de
+                double auth dans l'en-tête de réponse « 2FA-Token ».
      code 505 → identifiants invalides.
-  4. Double auth : GET/POST connexion/doubleauth.awp → {cn, cv} (réutilisables) ;
+  4. Double auth : QCM GET/POST connexion/doubleauth.awp, ou TOTP POST
+     restv3/ws/auth/totp {codeVerification} → {cn, cv} (réutilisables) ;
      on relance le login avec fa=[{cn,cv}].
 
 Le X-Token tourne à chaque appel : chaque réponse fournit un nouveau jeton.
@@ -183,6 +186,9 @@ class PersoAuth:
             raise AuthError(f"Échec réseau (login) : {type(exc).__name__}") from exc
         if resp.status_code != 200:
             raise AuthError(f"Login refusé (HTTP {resp.status_code}).")
+        # Jeton de double authentification (en-tête « 2FA-Token », code 250) : à
+        # renvoyer tel quel aux appels de double auth (QCM ou TOTP).
+        self.last_2fa_token = resp.headers.get("2fa-token") or ""
         try:
             return resp.json()
         except ValueError as exc:
@@ -234,11 +240,43 @@ def _b64e(s: str) -> str:
     return base64.b64encode(s.encode("utf-8")).decode()
 
 
-async def _resolve_double_auth(client: httpx.AsyncClient, temp_token: str) -> tuple[str, str]:
+async def _resolve_totp(client: httpx.AsyncClient, twofa_token: str) -> tuple[str, str]:
+    """Double auth par code TOTP (application d'authentification), activée par
+    l'utilisateur dans son compte EcoleDirecte (login → code 250, data.totp=true).
+    Front : POST <api>/restv3/ws/auth/totp, JSON {codeVerification}, en-tête 2FA-Token ;
+    403 = code refusé. Renvoie (cn, cv) réutilisables."""
+    if not twofa_token:
+        raise AuthError("Jeton 2FA absent de la réponse de login.")
+    code = input("\nCode de vérification à 6 chiffres (application d'authentification) : ").strip()
+    if not (len(code) == 6 and code.isdigit()):
+        raise AuthError("Le code doit comporter 6 chiffres.")
+    rest_base = SETTINGS.login_base.rsplit("/v3", 1)[0] + "/restv3/ws"
+    resp = await client.post(f"{rest_base}/auth/totp", params={"v": SETTINGS.api_version},
+                             json={"codeVerification": code},
+                             headers={"2FA-Token": twofa_token, "User-Agent": SETTINGS.user_agent,
+                                      "Accept": "application/json"})
+    if resp.status_code == 403:
+        raise AuthError("Code TOTP refusé (expiré ou erroné) — relance `login` avec un code neuf.")
+    if resp.status_code != 200:
+        raise AuthError(f"Double auth TOTP refusée (HTTP {resp.status_code}).")
+    try:
+        body = resp.json()
+    except ValueError as exc:
+        raise AuthError("Réponse TOTP non JSON.") from exc
+    data = body.get("data") if isinstance(body.get("data"), dict) else body
+    if not (data.get("cn") and data.get("cv")):
+        raise AuthError("Réponse TOTP sans cn/cv.")
+    return data["cn"], data["cv"]
+
+
+async def _resolve_double_auth(client: httpx.AsyncClient, temp_token: str,
+                               twofa_token: str = "") -> tuple[str, str]:
     """Résout le QCM en posant la question à l'utilisateur sur le terminal.
     Renvoie (cn, cv) réutilisables."""
     headers = {"Content-Type": "application/x-www-form-urlencoded", "X-Token": temp_token,
                "User-Agent": SETTINGS.user_agent, "Accept": "application/json"}
+    if twofa_token:
+        headers["2FA-Token"] = twofa_token
     resp = await client.post(f"{SETTINGS.login_base}/connexion/doubleauth.awp",
                              params={"verbe": "get", "v": SETTINGS.api_version},
                              content=encode_form_data({}), headers=headers)
@@ -273,7 +311,11 @@ async def _interactive_login(auth: PersoAuth) -> Session:
             payload["fa"] = [{"cn": auth.session.cn, "cv": auth.session.cv}]
         body = await auth._post_login(client, payload, gtk)
         if body.get("code") == DOUBLE_AUTH_CODE:
-            cn, cv = await _resolve_double_auth(client, body["token"])
+            twofa = getattr(auth, "last_2fa_token", "")
+            if (body.get("data") or {}).get("totp"):
+                cn, cv = await _resolve_totp(client, twofa or body.get("token", ""))
+            else:
+                cn, cv = await _resolve_double_auth(client, body["token"], twofa)
             auth.session.cn, auth.session.cv = cn, cv
             auth.store.save(auth.session)
             gtk = await auth._get_gtk(client)
