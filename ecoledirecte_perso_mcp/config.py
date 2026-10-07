@@ -1,6 +1,6 @@
 """Configuration du connecteur « espace personnel » — variables d'environnement.
 
-Aucun secret codé en dur. Le mot de passe du compte personnel (secrétariat) vit
+Aucun secret codé en dur. Le mot de passe du compte personnel de l'utilisateur vit
 dans le Trousseau macOS (service `ecoledirecte-perso-mcp`), et les jetons de
 double authentification (cn/cv, réutilisables) + le dernier X-Token dans un
 fichier local hors dépôt.

@@ -1,4 +1,4 @@
-"""Serveur MCP EcoleDirecte — espace personnel (compte secrétariat), lecture seule.
+"""Serveur MCP EcoleDirecte — espace personnel (compte de l'utilisateur).
 
 Complète le serveur admin : ici on lit ce que voit un compte personnel sur
 www.ecoledirecte.com — messagerie (liste seule), agenda, rendez-vous, cahier de
@@ -27,7 +27,7 @@ mcp = MCPServer(
     title="EcoleDirecte espace personnel (prototype non officiel)",
     instructions=(
         "Accès en LECTURE SEULE à l'espace personnel EcoleDirecte d'un compte "
-        "personnel (secrétariat) de votre établissement, via l'API interne du site "
+        "personnel de l'établissement (celui de l'utilisateur), via l'API interne du site "
         "www.ecoledirecte.com. Sert à consulter les fiches élèves par classe et "
         "l'activité de communication. Données personnelles : n'extraire "
         "que ce qui est nécessaire. Ne jamais ouvrir un message individuel."
@@ -138,7 +138,7 @@ async def ed_perso_message_ecrire(sujet: str, texte: str, destinataires: list[di
                                   pieces_jointes: list[str] | None = None,
                                   plafond_destinataires: int | None = None) -> Any:
     """ÉCRITURE — prépare un message de la messagerie EcoleDirecte du compte connecté
-    (compte PARTAGÉ du secrétariat : il part sous son nom). `mode` = 'brouillon'
+    (compte personnel de l'utilisateur : il part sous son nom, brouillon dans sa boîte). `mode` = 'brouillon'
     (déposé dans les brouillons ; l'utilisateur relit et envoie lui-même depuis
     EcoleDirecte — à privilégier) ou 'envoi' (envoyé directement).
 

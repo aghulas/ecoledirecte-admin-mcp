@@ -1,4 +1,4 @@
-"""Authentification espace personnel EcoleDirecte (compte secrétariat).
+"""Authentification espace personnel EcoleDirecte (compte personnel de l'utilisateur).
 
 Flux (voir docs/cartographie-api-personnel.md §3), plus complexe que l'admin :
   1. GET  login.awp?gtk=1   → cookie GTK, à renvoyer en header X-Gtk.
@@ -290,7 +290,7 @@ async def _interactive_login(auth: PersoAuth) -> Session:
 # CLI : login (interactif, gère le QCM) / setup (Trousseau) / logout
 # ----------------------------------------------------------------------
 def _setup_keychain() -> None:
-    identifiant = input("Identifiant du compte personnel (secrétariat) : ").strip()
+    identifiant = input("Votre identifiant EcoleDirecte (compte personnel) : ").strip()
     if not identifiant:
         raise SystemExit("Identifiant vide.")
     SETTINGS.home_dir.mkdir(parents=True, exist_ok=True)
