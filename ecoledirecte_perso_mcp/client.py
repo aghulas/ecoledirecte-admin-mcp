@@ -203,7 +203,12 @@ class EcoleDirectePersoClient:
             and isinstance(data.get("ids"), list) and len(data["ids"]) == 1
         ok_envoi = verbe == "post" and path == base and isinstance(data.get("message"), dict) \
             and set(data) <= {"message", "anneeMessages"} and os.environ.get("ED_PERSO_MESSAGERIE_ACTIF") == "1"
-        if not (ok_lecture or ok_non_lu or ok_envoi):
+        # suppression d'UN brouillon (dossier -5) : seule suppression autorisée
+        ok_suppr_brouillon = verbe == "delete" and path == base and data.get("action") == "supprimer" \
+            and data.get("idDossier") == DOSSIERS["draft"] and isinstance(data.get("ids"), list) \
+            and len(data["ids"]) == 1 and set(data) <= {"action", "ids", "idDossier", "anneeMessages"} \
+            and os.environ.get("ED_PERSO_MESSAGERIE_ACTIF") == "1"
+        if not (ok_lecture or ok_non_lu or ok_envoi or ok_suppr_brouillon):
             raise ForbiddenEndpointError(f"Opération de messagerie non autorisée : {verbe} {path}")
         for attempt in (1, 2):
             session = await self._auth.ensure_session(self._http)
@@ -301,6 +306,16 @@ class EcoleDirectePersoClient:
         base = f"{self._word()}/{self._account_id()}/messages"
         return await self._appel_messagerie(f"{base}/{int(id_message)}", "get", {"mode": "expediteur"},
                                             {"anneeMessages": SETTINGS.annee}) or {}
+
+    async def supprimer_brouillon_brut(self, id_message: int) -> Any:
+        """Supprime UN brouillon (comme le bouton « Supprimer » du dossier Brouillons :
+        POST messages.awp?verbe=delete, {action: supprimer, ids: [id], idDossier: -5}).
+        Appelé uniquement par messagerie_ecriture.supprimer_brouillon, après vérification
+        que le message est un brouillon, simulation, accord et confirm=True."""
+        base = f"{self._word()}/{self._account_id()}/messages"
+        return await self._appel_messagerie(base, "delete", {}, {
+            "action": "supprimer", "ids": [int(id_message)], "anneeMessages": SETTINGS.annee,
+            "idDossier": DOSSIERS["draft"]})
 
     async def poster_message(self, message: dict[str, Any]) -> Any:
         """Brouillon ou envoi d'un message (appelé uniquement par messagerie_ecriture,

@@ -69,8 +69,12 @@ def test_message_list_allowed():
 def test_client_has_no_write_helpers():
     # Aucune méthode publique d'écriture (postits = lecture du tableau, autorisé).
     write_words = ("envoy", "supprim", "marquer", "creer", "delete", "update", "put_", "post_")
+    # Seule exception (08/10/2026) : suppression d'UN brouillon, verrouillée dans
+    # _appel_messagerie (dossier -5, un id, ED_PERSO_MESSAGERIE_ACTIF=1) et testée
+    # dans test_messagerie_perso.py.
+    autorisees = {"supprimer_brouillon_brut"}
     for n in dir(EcoleDirectePersoClient):
-        if not n.startswith("_"):
+        if not n.startswith("_") and n not in autorisees:
             assert not any(w in n.lower() for w in write_words), n
 
 
