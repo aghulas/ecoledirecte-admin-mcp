@@ -249,6 +249,7 @@ cd ~/dev/ecoledirecte-admin-mcp
 | `ed_perso_contacts_rechercher(type, nom?)` | annuaire de la messagerie : familles (par nom d'élève, une ligne par parent) ou personnels |
 | `ed_perso_message_ecrire(sujet, texte, destinataires, mode?, confirm?, pieces_jointes?, plafond_destinataires?)` | **ÉCRITURE** — brouillon (`mode="brouillon"`, à privilégier) ou envoi ; simulation par défaut, `ED_PERSO_MESSAGERIE_ACTIF=1`, plafond `ED_PERSO_MESSAGERIE_MAX_DEST` (30) ; en brouillon, `plafond_destinataires` jusqu'à `ED_PERSO_MESSAGERIE_MAX_DEST_BROUILLON` (150) ; responsables d'une fratrie comptés une fois ; `pieces_jointes` : 5 fichiers au plus (pdf, png, jpg, docx ; 20 Mo) sous `ED_PERSO_PJ_RACINES` (défaut ~/Charlemagne), documents bancaires refusés, téléversés via `televersement.awp` puis référencés dans `files` |
 | `ed_perso_brouillon_modifier(id_message, sujet?, texte?, remplacements?, destinataires?, confirm?)` | **ÉCRITURE** — modifie un brouillon existant sans l'envoyer : objet, texte entier ou remplacements exacts (mise en forme conservée) ; destinataires conservés (retrouvés dans l'annuaire, un introuvable bloque) ou remplacés ; pièces jointes conservées ; simulation par défaut, `ED_PERSO_MESSAGERIE_ACTIF=1`. Le POST reprend `id` **et** `draftId` du brouillon (sans `id`, EcoleDirecte crée un doublon) et les contacts complets (les contacts réduits de `to` sont perdus) |
+| `ed_perso_brouillon_supprimer(id_message, confirm?)` | **ÉCRITURE** — supprime UN brouillon de la boîte du compte (refusé pour un message reçu ou envoyé) : `POST messages.awp?verbe=delete`, `{action: "supprimer", ids: [id], idDossier: -5}` ; simulation par défaut, `ED_PERSO_MESSAGERIE_ACTIF=1`, journal |
 | `ed_perso_agenda` | événements agenda |
 | `ed_perso_carnet_liaison_non_lus` | compteurs non lus du cahier de liaison |
 | `ed_perso_rendez_vous` | sessions et RDV individuels |
@@ -298,3 +299,14 @@ une appli CAS activée par établissement, le front renseigne aussi `…/RNE`. L
 d'applis sont activées par défaut par Aplim (`activerParDefaut`). Les applis non
 « universelles » (ESIDOC, CATER, SACOCHE, VOLTAIRE, ALISE, ARD, SCOLACONCEPT) ont un écran
 codé en dur : hors périmètre.
+
+### Plusieurs comptes (ex. compte personnel + compte du secrétariat)
+
+Le serveur perso peut être lancé plusieurs fois, une instance par compte, chacune avec son dossier :
+`ED_PERSO_HOME` (config.json, session.json, journal ; défaut `~/.ecoledirecte-perso-mcp`). Le mot de passe
+reste dans le Trousseau sous le même service (`ED_PERSO_KEYCHAIN_SERVICE`), rangé par identifiant.
+Initialiser un second compte : `ED_PERSO_HOME=~/.ecoledirecte-<nom>-mcp .venv/bin/python -m
+ecoledirecte_perso_mcp.auth setup` puis `… auth login`, et déclarer un second serveur dans
+`claude_desktop_config.json` avec le même `command` et cet `ED_PERSO_HOME` (ses outils apparaissent
+préfixés par le nom du serveur, ex. `ecoledirecte-secretariat`).
+

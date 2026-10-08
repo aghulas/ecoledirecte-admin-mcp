@@ -19,7 +19,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from .messagerie_ecriture import modifier_brouillon, preparer_message, rechercher_contacts
+from .messagerie_ecriture import modifier_brouillon, preparer_message, rechercher_contacts, supprimer_brouillon
 from .client import EcoleDirectePersoClient
 
 mcp = MCPServer(
@@ -182,6 +182,17 @@ async def ed_perso_brouillon_modifier(id_message: int, sujet: str | None = None,
     d'envoi ; journal."""
     return await modifier_brouillon(_get_client(), id_message, sujet, texte, remplacements, confirm,
                                     destinataires)
+
+
+@mcp.tool()
+async def ed_perso_brouillon_supprimer(id_message: int, confirm: bool = False) -> Any:
+    """ÉCRITURE — supprime UN brouillon de la boîte du compte connecté (id :
+    ed_perso_messages_list boite='draft'). Refusé si le message n'est pas un
+    brouillon (jamais un message reçu ou envoyé). Sans confirm=True : SIMULATION
+    (objet, date, nombre de destinataires, début du texte) — la montrer et obtenir
+    l'accord explicite avant confirm=True ; suppression définitive. Garde-fous :
+    ED_PERSO_MESSAGERIE_ACTIF=1 ; un seul brouillon par appel ; journal."""
+    return await supprimer_brouillon(_get_client(), id_message, confirm)
 
 
 @mcp.tool()

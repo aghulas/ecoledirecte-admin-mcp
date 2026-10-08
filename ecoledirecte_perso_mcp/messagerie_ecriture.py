@@ -402,3 +402,34 @@ async def modifier_brouillon(client, id_message: int, sujet: str | None = None, 
                     nouveau_sujet, len(dest), f"draftId={id_message}", " ; ".join(apercu["pieces_jointes"])])
     return {**apercu, "ecrit": True, "id_message": (r or {}).get("id"),
             "message": "Brouillon mis à jour dans EcoleDirecte (non envoyé)."}
+
+
+# ---------------------------------------------------------------- suppression d'un brouillon
+async def supprimer_brouillon(client, id_message: int, confirm: bool = False) -> dict[str, Any]:
+    """Supprime UN brouillon de la boîte du compte connecté (jamais un message reçu ou envoyé)."""
+    d = await client.lire_brouillon_brut(id_message)
+    if not d or d.get("brouillon") is not True:
+        raise MessagerieError(f"Le message {id_message} n'est pas un brouillon de la boîte du compte connecté : "
+                              "suppression refusée.")
+    from .client import texte_message
+    to = d.get("to") or []
+    apercu = {"id_brouillon": int(id_message), "objet": d.get("subject"), "date": d.get("date"),
+              "nb_destinataires": len(to),
+              "repartition": {c: sum(1 for x in to if x.get("to_cc_cci") == c) for c in ("to", "cc", "cci")},
+              "debut_texte": texte_message(d.get("content"))[:200]}
+    if not confirm:
+        return {**apercu, "supprime": False, "message": "Simulation : brouillon conservé. Rappeler avec confirm=True "
+                "après accord explicite de l'utilisateur (suppression définitive)."}
+    if not _actif():
+        raise MessagerieError("Écriture désactivée (ED_PERSO_MESSAGERIE_ACTIF≠1).")
+    await client.supprimer_brouillon_brut(id_message)
+    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
+    new = not JOURNAL.exists()
+    with JOURNAL.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        if new:
+            w.writerow(["horodatage", "mode", "id_message", "objet", "nb_destinataires", "destinataires",
+                        "pieces_jointes"])
+        w.writerow([datetime.now().isoformat(timespec="seconds"), "brouillon_supprime", int(id_message),
+                    d.get("subject"), len(to), "", ""])
+    return {**apercu, "supprime": True, "message": "Brouillon supprimé."}

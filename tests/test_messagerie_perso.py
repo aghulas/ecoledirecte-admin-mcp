@@ -312,3 +312,49 @@ async def test_modif_brouillon_remplacer_destinataires(env, monkeypatch):
     assert r["repartition"] == {"to": 0, "cc": 0, "cci": 2}
     dest = [d for g in c.postes[0]["groupesDestinataires"] for d in g["destinataires"]]
     assert sorted(d["responsable"]["id"] for d in dest) == [70, 71]
+
+
+# --- suppression d'un brouillon ----------------------------------------------
+class FakeClientSuppr(FakeClientBrouillon):
+    def __init__(self, brouillon):
+        super().__init__(brouillon)
+        self.supprimes = []
+
+    async def supprimer_brouillon_brut(self, id_message):
+        self.supprimes.append(id_message)
+
+
+async def test_suppr_brouillon_simulation_puis_ecriture(env, monkeypatch):
+    c = FakeClientSuppr(_brouillon())
+    r = await me.supprimer_brouillon(c, 45)
+    assert r["supprime"] is False and c.supprimes == [] and r["nb_destinataires"] == 2
+    with pytest.raises(me.MessagerieError, match="Écriture désactivée"):
+        await me.supprimer_brouillon(c, 45, confirm=True)
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    r = await me.supprimer_brouillon(c, 45, confirm=True)
+    assert r["supprime"] is True and c.supprimes == [45]
+    assert "brouillon_supprime" in me.JOURNAL.read_text(encoding="utf-8")
+
+
+async def test_suppr_refuse_hors_brouillon(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    c = FakeClientSuppr(_brouillon(brouillon=False))
+    with pytest.raises(me.MessagerieError, match="pas un brouillon"):
+        await me.supprimer_brouillon(c, 45, confirm=True)
+    assert c.supprimes == []
+
+
+async def test_client_suppression_limitee_a_un_brouillon(monkeypatch):
+    c = cl.EcoleDirectePersoClient(auth=_Auth(), http=object())
+    base = "personnels/18/messages"
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    for d in ({"action": "supprimer", "ids": [12], "idDossier": -1},          # message reçu
+              {"action": "supprimer", "ids": [12], "idDossier": -2},          # message envoyé
+              {"action": "supprimer", "ids": [12, 13], "idDossier": -5},      # plusieurs
+              {"action": "annuler", "ids": [12], "idDossier": -5},
+              {"action": "supprimer", "ids": [12], "idDossier": -5, "x": 1}):
+        with pytest.raises(cl.ForbiddenEndpointError):
+            await c._appel_messagerie(base, "delete", {}, d)
+    monkeypatch.delenv("ED_PERSO_MESSAGERIE_ACTIF")
+    with pytest.raises(cl.ForbiddenEndpointError):
+        await c._appel_messagerie(base, "delete", {}, {"action": "supprimer", "ids": [12], "idDossier": -5})
