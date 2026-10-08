@@ -65,6 +65,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
   Claude-Session: <lien de la session>
   ```
   (reprendre les lignes d'attribution indiquées par la session courante).
+- Commit depuis le Mac (Desktop Commander) : l'outil peut refuser une commande dont le message de commit est écrit dedans (« Command not allowed », constaté le 08/10/2026 avec un message en heredoc contenant des balises `<div>`) — écrire le message dans un fichier temporaire (`write_file`), puis `git commit -F <fichier>`, et supprimer le fichier.
 - Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre (numéro de correctif pour un correctif).
 - Fusion `--ff-only` dans `main`, push, suppression de la branche.
 - Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure.
