@@ -294,6 +294,14 @@ class EcoleDirectePersoClient:
             return {"unc": data["unc"], "libelle": data.get("libelle") or chemin.name}
         raise AssertionError("unreachable")
 
+    async def lire_brouillon_brut(self, id_message: int) -> dict[str, Any]:
+        """Brouillon tel que le renvoie EcoleDirecte (objet, contenu base64, destinataires
+        `to` avec role et to_cc_cci, pièces jointes) — pour le réenregistrer modifié.
+        Lecture d'un message de la boîte d'envoi : ne marque rien."""
+        base = f"{self._word()}/{self._account_id()}/messages"
+        return await self._appel_messagerie(f"{base}/{int(id_message)}", "get", {"mode": "expediteur"},
+                                            {"anneeMessages": SETTINGS.annee}) or {}
+
     async def poster_message(self, message: dict[str, Any]) -> Any:
         """Brouillon ou envoi d'un message (appelé uniquement par messagerie_ecriture,
         après simulation, accord et confirm=True ; refusé si ED_PERSO_MESSAGERIE_ACTIF≠1)."""
