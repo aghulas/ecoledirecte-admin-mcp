@@ -51,6 +51,7 @@ Deux serveurs MCP, mêmes outils (`ed_perso_*`), un compte chacun — vérifier 
 ## 6. Envoi
 
 - C'est une personne qui relit et envoie le brouillon depuis EcoleDirecte (dossier Brouillons du compte expéditeur). Jamais d'envoi direct par le connecteur sans accord explicite de Rémi pour ce message.
+- **Prévenir la personne qui envoie** : brouillons préparés sur le compte du secrétariat → préparer en même temps un brouillon Outlook (connecteur Microsoft 365, depuis le compte de Rémi) à secretariat@saintemarie-fontainebleau.fr, vouvoiement, « Bonjour Agnès, » : où sont les brouillons (messagerie EcoleDirecte du secrétariat, dossier Brouillons), une ligne par brouillon (objet, nombre de destinataires, ce qui est demandé aux familles), l'échéance donnée aux familles, destinataires déjà en Cci et signature déjà mise, demande de relire puis d'envoyer. Rémi relit et envoie ce mail lui-même (fait le 08/10/2026 pour les relances de justificatifs).
 - Après envoi, vérifier dans `ed_perso_messages_list(boite="sent")` du bon serveur.
 
 ## 7. Points d'attention
