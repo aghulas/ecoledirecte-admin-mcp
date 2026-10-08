@@ -214,3 +214,101 @@ async def test_fratrie_dedoublonnee(env):
             {"type": "famille", "id_eleve": 7, "responsable": "1"}]
     sim = await me.preparer_message(env, "O", "T", dest)
     assert sim["nb_destinataires"] == 2
+
+
+# --- modification d'un brouillon -------------------------------------------
+def _brouillon(**kw):
+    h = "<p>Liste &laquo; Justificatifs Fratries &raquo;, avant le 15 octobre.</p><p>Bien cordialement,<br>R.</p>"
+    d = {"id": 45, "brouillon": True, "subject": "Objet initial", "responseId": 0, "forwardId": 0,
+         "content": base64.b64encode(h.encode()).decode(),
+         "to": [{"id": 70, "role": "1", "nom": "DUPONT", "prenom": "Jean", "civilite": "M.", "particule": "",
+                 "to_cc_cci": "cci", "read": False, "fonctionPersonnel": ""},
+                {"id": 30, "role": "A", "nom": "TEST", "prenom": "Zoé", "civilite": "Mme", "particule": "",
+                 "to_cc_cci": "to", "read": False, "fonctionPersonnel": "ASEM"}],
+         "files": [{"id": 5, "libelle": "invitation.pdf"}]}
+    d.update(kw)
+    return d
+
+
+class FakeClientBrouillon(FakeClient):
+    def __init__(self, brouillon):
+        super().__init__()
+        self.brouillon = brouillon
+
+    async def lire_brouillon_brut(self, id_message):
+        return self.brouillon
+
+
+async def test_modif_brouillon_simulation(env):
+    c = FakeClientBrouillon(_brouillon())
+    r = await me.modifier_brouillon(c, 45, remplacements=[{"ancien": "Fratries", "nouveau": "Frateries"}])
+    assert r["ecrit"] is False and c.postes == []
+    assert r["remplacements"] == [{"ancien": "Fratries", "nouveau": "Frateries", "occurrences": 1}]
+    assert "« Justificatifs Frateries »" in r["texte_apres"]
+    assert r["repartition"] == {"to": 1, "cc": 0, "cci": 1} and r["pieces_jointes"] == ["invitation.pdf"]
+
+
+async def test_modif_brouillon_ecriture(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    c = FakeClientBrouillon(_brouillon())
+    r = await me.modifier_brouillon(c, 45, sujet="Nouvel objet",
+                                    remplacements=[{"ancien": "Fratries", "nouveau": "Frateries"}], confirm=True)
+    assert r["ecrit"] is True
+    msg = c.postes[0]
+    # id ET draftId : sans `id`, EcoleDirecte crée un nouveau brouillon (constaté le 08/10/2026)
+    assert msg["id"] == 45 and msg["draftId"] == 45 and msg["brouillon"] is True
+    assert msg["subject"] == "Nouvel objet"
+    assert msg["files"] == [{"id": 5, "libelle": "invitation.pdf"}]
+    html_apres = base64.b64decode(msg["content"]).decode("ascii")
+    assert "Frateries" in html_apres and "&laquo;" in html_apres and "<br>" in html_apres  # forme conservée
+    # destinataires = contacts COMPLETS de l'annuaire (les contacts réduits de `to` sont perdus)
+    dest = [d for g in msg["groupesDestinataires"] for d in g["destinataires"]]
+    fam = [d for d in dest if d["type"] == "1"]
+    assert len(fam) == 1 and fam[0]["responsable"]["id"] == 70 and fam[0]["to_cc_cci"] == "cci"
+    pers = [d for d in dest if d["type"] == "A"]
+    assert len(pers) == 1 and pers[0]["id"] == 30 and pers[0]["to_cc_cci"] == "to" and pers[0]["fonction"]
+    assert "brouillon_modifie" in me.JOURNAL.read_text(encoding="utf-8")
+
+
+async def test_modif_brouillon_texte_entier(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    c = FakeClientBrouillon(_brouillon())
+    await me.modifier_brouillon(c, 45, texte="Bonjour,\n\nNouveau texte é.", confirm=True)
+    assert base64.b64decode(c.postes[0]["content"]).decode() == "<p>Bonjour,</p><p>Nouveau texte &eacute;.</p>"
+
+
+async def test_modif_brouillon_garde_fous(env, monkeypatch):
+    c = FakeClientBrouillon(_brouillon())
+    with pytest.raises(me.MessagerieError, match="introuvable"):
+        await me.modifier_brouillon(c, 45, remplacements=[{"ancien": "absent", "nouveau": "x"}])
+    with pytest.raises(me.MessagerieError, match="Rien à modifier"):
+        await me.modifier_brouillon(c, 45)
+    with pytest.raises(me.MessagerieError, match="pas les deux"):
+        await me.modifier_brouillon(c, 45, texte="a", remplacements=[{"ancien": "a", "nouveau": "b"}])
+    with pytest.raises(me.MessagerieError, match="Écriture désactivée"):
+        await me.modifier_brouillon(c, 45, sujet="x", confirm=True)
+    envoye = FakeClientBrouillon(_brouillon(brouillon=False))
+    with pytest.raises(me.MessagerieError, match="pas un brouillon"):
+        await me.modifier_brouillon(envoye, 45, sujet="x")
+    assert c.postes == [] and envoye.postes == []
+
+
+async def test_modif_brouillon_destinataire_introuvable_bloque(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    b = _brouillon()
+    b["to"].append({"id": 999, "role": "1", "nom": "INCONNU", "prenom": "X", "civilite": "M.",
+                    "particule": "", "to_cc_cci": "cci"})
+    c = FakeClientBrouillon(b)
+    with pytest.raises(me.MessagerieError, match="introuvables"):
+        await me.modifier_brouillon(c, 45, sujet="x", confirm=True)
+    assert c.postes == []
+
+
+async def test_modif_brouillon_remplacer_destinataires(env, monkeypatch):
+    monkeypatch.setenv("ED_PERSO_MESSAGERIE_ACTIF", "1")
+    c = FakeClientBrouillon(_brouillon(to=[]))
+    r = await me.modifier_brouillon(c, 45, confirm=True, destinataires=[
+        {"type": "famille", "id_eleve": 7, "responsable": "tous", "champ": "cci"}])
+    assert r["repartition"] == {"to": 0, "cc": 0, "cci": 2}
+    dest = [d for g in c.postes[0]["groupesDestinataires"] for d in g["destinataires"]]
+    assert sorted(d["responsable"]["id"] for d in dest) == [70, 71]

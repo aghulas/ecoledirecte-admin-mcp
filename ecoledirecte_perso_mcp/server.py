@@ -19,7 +19,7 @@ from typing import Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
-from .messagerie_ecriture import preparer_message, rechercher_contacts
+from .messagerie_ecriture import modifier_brouillon, preparer_message, rechercher_contacts
 from .client import EcoleDirectePersoClient
 
 mcp = MCPServer(
@@ -159,6 +159,29 @@ async def ed_perso_message_ecrire(sujet: str, texte: str, destinataires: list[di
     (défaut 30) ; messagerie inactive refusée ; journal."""
     return await preparer_message(_get_client(), sujet, texte, destinataires, mode, confirm,
                                   pieces_jointes, plafond_destinataires)
+
+
+@mcp.tool()
+async def ed_perso_brouillon_modifier(id_message: int, sujet: str | None = None, texte: str | None = None,
+                                      remplacements: list[dict[str, str]] | None = None,
+                                      destinataires: list[dict[str, Any]] | None = None,
+                                      confirm: bool = False) -> Any:
+    """ÉCRITURE — modifie un BROUILLON existant de la boîte du compte connecté (id :
+    ed_perso_messages_list boite='draft'), sans l'envoyer. `sujet` = nouvel objet ;
+    `texte` = remplace tout le texte (texte brut, comme ed_perso_message_ecrire) ;
+    OU `remplacements` = [{"ancien": "...", "nouveau": "..."}] : remplacements exacts
+    dans le texte, mise en forme conservée (chaque « ancien » doit exister).
+    Destinataires : conservés (to/cc/cci), retrouvés un par un dans l'annuaire — un
+    destinataire introuvable bloque la modification ; ou remplacés par `destinataires`
+    (même format que ed_perso_message_ecrire, 150 au plus). Pièces jointes conservées.
+    Sans confirm=True : SIMULATION (objet avant/après, remplacements et nombre
+    d'occurrences, destinataires, texte final) — la montrer et obtenir l'accord
+    explicite avant confirm=True. Après écriture, relire avec ed_perso_message_lire
+    (boite='draft') : nombre de destinataires et texte. Garde-fous :
+    ED_PERSO_MESSAGERIE_ACTIF=1 ; refus si le message n'est pas un brouillon ; jamais
+    d'envoi ; journal."""
+    return await modifier_brouillon(_get_client(), id_message, sujet, texte, remplacements, confirm,
+                                    destinataires)
 
 
 @mcp.tool()

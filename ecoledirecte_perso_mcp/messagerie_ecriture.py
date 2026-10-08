@@ -25,6 +25,13 @@ les messages partent sous son nom et les brouillons sont dans sa boîte. Garde-f
   - destinataires en double (fratries) dédoublonnés ;
   - pas de réponse/transfert automatique, pas d'envoi différé ;
   - journal local (sans contenu du message) : ~/.ecoledirecte-perso-mcp/messages_envoyes.csv.
+
+Modification d'un BROUILLON existant (08/10/2026) : le front réenregistre un brouillon par le même
+POST, avec `draftId` = id du brouillon ; les destinataires sont reconstruits à partir de `to`
+({id, role, nom, prenom, civilite, particule, to_cc_cci}) et les pièces jointes reprises telles
+quelles. `modifier_brouillon` reproduit ce comportement : objet, texte entier, ou remplacements
+exacts dans le texte (mise en forme conservée) ; destinataires et pièces jointes inchangés ;
+simulation par défaut, confirm=True après accord ; jamais d'envoi.
 """
 from __future__ import annotations
 
@@ -273,3 +280,125 @@ async def preparer_message(client, sujet: str, texte: str, destinataires: list[d
     return {**apercu, "ecrit": True, "id_message": (r or {}).get("id"),
             "message": "Brouillon enregistré dans les brouillons EcoleDirecte." if mode == "brouillon"
             else "Message envoyé."}
+
+
+# ---------------------------------------------------------------- modification d'un brouillon
+def html_du_contenu(contenu_b64: str | None) -> str:
+    """Contenu base64 (HTML avec entités) → HTML en texte Unicode, pour y faire des remplacements."""
+    if not contenu_b64:
+        return ""
+    return html.unescape(base64.b64decode(contenu_b64).decode("utf-8", errors="replace"))
+
+
+def contenu_depuis_html(h: str) -> str:
+    return base64.b64encode(escape_html_encode(h).encode("ascii")).decode()
+
+
+def appliquer_remplacements(h: str, remplacements: list[dict[str, str]]) -> tuple[str, list[dict[str, Any]]]:
+    """Remplacements exacts (texte visible) ; chaque « ancien » doit être présent au moins une fois."""
+    bilan = []
+    for r in remplacements:
+        ancien, nouveau = r.get("ancien", ""), r.get("nouveau", "")
+        if not ancien:
+            raise MessagerieError("Remplacement sans texte « ancien ».")
+        n = h.count(ancien)
+        if n == 0:
+            raise MessagerieError(f"Texte introuvable dans le brouillon : « {ancien} » (rien n'a été modifié).")
+        h = h.replace(ancien, nouveau)
+        bilan.append({"ancien": ancien, "nouveau": nouveau, "occurrences": n})
+    return h, bilan
+
+
+async def destinataires_du_brouillon(client, to: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """`to` d'un brouillon → contacts COMPLETS de l'annuaire (comme à la création).
+
+    Constaté le 08/10/2026 : réenregistrer un brouillon avec les destinataires réduits que
+    renvoie `to` (id, role, nom…) les fait disparaître. On retrouve donc chaque destinataire
+    dans l'annuaire : famille (role 1/2) par `responsable.id`, personnel par `id`. Un
+    destinataire introuvable bloque la modification (jamais de perte silencieuse)."""
+    familles = await _contacts(client, "famille")
+    par_resp = {int((c.get("responsable") or {}).get("id")): c for c in familles
+                if (c.get("responsable") or {}).get("id") is not None}
+    personnels = None
+    out, manquants = [], []
+    for h in to or []:
+        champ = h.get("to_cc_cci") or "to"
+        role, ident = str(h.get("role")), int(h.get("id", -1))
+        if role in ("1", "2") and ident in par_resp:
+            out.append({**par_resp[ident], "type": TYPE_FAMILLE_RESPONSABLE, "to_cc_cci": champ})
+            continue
+        if personnels is None:
+            personnels = await _contacts(client, "personnel")
+        p = next((c for c in personnels if int(c.get("id", -2)) == ident), None)
+        if p and role not in ("1", "2"):
+            out.append({**p, "to_cc_cci": champ})
+        else:
+            manquants.append(" ".join(x for x in (h.get("civilite"), h.get("prenom"), h.get("nom")) if x))
+    if manquants:
+        raise MessagerieError("Destinataires du brouillon introuvables dans l'annuaire (rien n'a été modifié) : "
+                              + " ; ".join(manquants))
+    return out
+
+
+async def modifier_brouillon(client, id_message: int, sujet: str | None = None, texte: str | None = None,
+                             remplacements: list[dict[str, str]] | None = None,
+                             confirm: bool = False,
+                             destinataires: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    if texte and remplacements:
+        raise MessagerieError("Donner soit `texte` (remplace tout le texte), soit `remplacements`, pas les deux.")
+    if not (sujet or texte or remplacements or destinataires):
+        raise MessagerieError("Rien à modifier : préciser `sujet`, `texte`, `remplacements` ou `destinataires`.")
+    d = await client.lire_brouillon_brut(id_message)
+    if not d or d.get("brouillon") is not True:
+        raise MessagerieError(f"Le message {id_message} n'est pas un brouillon de la boîte du compte connecté.")
+    from .client import texte_message  # import local : évite un cycle
+    avant_html = html_du_contenu(d.get("content"))
+    bilan: list[dict[str, Any]] = []
+    if texte:
+        contenu = contenu_message(texte)
+    elif remplacements:
+        apres_html, bilan = appliquer_remplacements(avant_html, remplacements)
+        contenu = contenu_depuis_html(apres_html)
+    else:
+        contenu = d.get("content") or ""
+    nouveau_sujet = sujet.strip() if sujet else d.get("subject") or ""
+    if destinataires:
+        dest = await resoudre_destinataires(client, destinataires)
+        if len(dest) > _max_dest_brouillon():
+            raise MessagerieError(f"{len(dest)} destinataires : plafond de {_max_dest_brouillon()} pour un brouillon.")
+    else:
+        dest = await destinataires_du_brouillon(client, d.get("to") or [])
+    info = await client.session_info()
+    apercu = {"id_brouillon": int(id_message),
+              "objet": {"avant": d.get("subject"), "apres": nouveau_sujet} if sujet else d.get("subject"),
+              "remplacements": bilan, "texte_apres": texte_message(contenu),
+              "nb_destinataires": len(dest),
+              "repartition": {c: sum(1 for x in dest if x["to_cc_cci"] == c) for c in ("to", "cc", "cci")},
+              "destinataires": [f"[{x['to_cc_cci']}] {libelle_contact(x)}" for x in dest],
+              "pieces_jointes": [f.get("libelle") for f in (d.get("files") or []) if isinstance(f, dict)]}
+    if not confirm:
+        return {**apercu, "ecrit": False, "message": "Simulation : brouillon inchangé. Rappeler avec confirm=True "
+                "après accord explicite de l'utilisateur. Destinataires et pièces jointes sont conservés."}
+    if not _actif():
+        raise MessagerieError("Écriture désactivée (ED_PERSO_MESSAGERIE_ACTIF≠1).")
+    groupes: dict[str, list[dict[str, Any]]] = {}
+    for x in dest:
+        groupes.setdefault(str(x["type"]), []).append(x)
+    msg = {"subject": nouveau_sujet, "content": contenu,
+           "groupesDestinataires": [{"destinataires": v, "selection": {"type": k}} for k, v in groupes.items()],
+           "transfertFiles": [], "files": list(d.get("files") or []), "read": True,
+           "from": {"role": info.get("typeCompte") or "A", "id": int(info["id"]), "read": True},
+           "brouillon": True, "id": int(id_message), "draftId": int(id_message),
+           "responseId": d.get("responseId") or 0, "forwardId": d.get("forwardId") or 0}
+    r = await client.poster_message(msg)
+    JOURNAL.parent.mkdir(parents=True, exist_ok=True)
+    new = not JOURNAL.exists()
+    with JOURNAL.open("a", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        if new:
+            w.writerow(["horodatage", "mode", "id_message", "objet", "nb_destinataires", "destinataires",
+                        "pieces_jointes"])
+        w.writerow([datetime.now().isoformat(timespec="seconds"), "brouillon_modifie", (r or {}).get("id"),
+                    nouveau_sujet, len(dest), f"draftId={id_message}", " ; ".join(apercu["pieces_jointes"])])
+    return {**apercu, "ecrit": True, "id_message": (r or {}).get("id"),
+            "message": "Brouillon mis à jour dans EcoleDirecte (non envoyé)."}
