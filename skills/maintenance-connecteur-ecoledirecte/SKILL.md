@@ -22,12 +22,15 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Pièces jointes : `client.televerser_piece_jointe` (`POST v3/televersement.awp?verbe=post`, multipart `file` → `{unc, libelle}`), puis `files: [{id:"0", libelle, displayText, unc}]` dans le message ; fichiers sous `ED_PERSO_PJ_RACINES` (défaut `~/Charlemagne`), 5 au plus, 20 Mo, documents bancaires refusés.
 - Plafonds : `ED_PERSO_MESSAGERIE_MAX_DEST` (30) pour un envoi, `ED_PERSO_MESSAGERIE_MAX_DEST_BROUILLON` (150) pour un brouillon via `plafond_destinataires`.
 - Validation réelle : uniquement en brouillon, relu (`ed_perso_message_lire`, `boite="draft"`), jamais envoyé sans accord explicite de Rémi.
+- Modifier un brouillon (`ed_perso_brouillon_modifier`, v0.10.0) : le front réenregistre par le même POST avec **`id` ET `draftId`** = n° du brouillon (sans `id` : nouveau brouillon créé) et les **contacts complets** de l'annuaire (familles par `responsable.id`, personnels par `id`) — réenregistrer les contacts réduits de `to` **vide les destinataires** (incident du 08/10/2026, rétabli aussitôt). Toujours relire après écriture : nombre de destinataires et texte.
+- Supprimer un brouillon (`ed_perso_brouillon_supprimer`, v0.11.0) : `POST messages.awp?verbe=delete`, `{action: "supprimer", ids: [id], idDossier: -5, anneeMessages}` ; seule suppression autorisée par `_appel_messagerie` (dossier -5, un id) ; le test « aucune méthode publique d'écriture » garde une exception explicite (`supprimer_brouillon_brut`).
 - **Jamais de message écrit au nom d'un autre compte par la supervision admin** : EcoleDirecte désactive l'envoi et les brouillons en mode supervision (décision du 01/10/2026, rappelée le 07/10) ; l'écriture se fait uniquement avec les identifiants du compte lui-même.
 
 ## Compte perso et authentification
 
-- Compte du connecteur perso : **le compte personnel de chaque utilisateur** (depuis le 07/10/2026 ; avant, le compte partagé du secrétariat) — quand le connecteur est diffusé, chacun configure ses propres identifiants. Identifiant dans `~/.ecoledirecte-perso-mcp/config.json`, mot de passe dans le Trousseau (service `ecoledirecte-perso-mcp`), jetons dans `session.json` (token, et `cn`/`cv` de double authentification).
-- Changer de compte ou de mot de passe : sauvegarder ces fichiers, puis l'utilisateur lance lui-même dans Terminal `cd ~/dev/ecoledirecte-admin-mcp`, `.venv/bin/python -m ecoledirecte_perso_mcp.auth setup` puis `… auth login`, et relance Claude Desktop. Erreur « Identifiant ou mot de passe invalide (505) » répétée = mot de passe changé.
+- **Une instance du serveur perso par compte** (depuis le 08/10/2026), chacune avec son dossier `ED_PERSO_HOME` (config.json = identifiant, session.json = token et `cn`/`cv`, journal) ; mot de passe dans le Trousseau (service `ecoledirecte-perso-mcp`, rangé par identifiant). Sur le Mac de Rémi : `ecoledirecte-perso` (son compte personnel, `~/.ecoledirecte-perso-mcp`) et `ecoledirecte-secretariat` (compte du secrétariat, `~/.ecoledirecte-secretariat-mcp`), même `command` dans `claude_desktop_config.json`, écriture activée sur les deux. Quand le connecteur est diffusé, chacun configure ses propres identifiants.
+- Changer de compte ou de mot de passe : sauvegarder ces fichiers, puis l'utilisateur lance lui-même dans Terminal `cd ~/dev/ecoledirecte-admin-mcp`, `ED_PERSO_HOME=<dossier du compte> .venv/bin/python -m ecoledirecte_perso_mcp.auth setup` puis `… auth login` (sans le préfixe, c'est le compte par défaut qui change), et relance Claude Desktop. Erreur « Identifiant ou mot de passe invalide (505) » répétée = mot de passe changé.
+- Tester un compte hors Claude : script temporaire lancé avec `ED_PERSO_HOME=…` (les `SETTINGS` sont lus à l'import : un processus par compte).
 - **Double authentification** : le login renvoie le code 250 et un jeton dans l'en-tête de réponse `2FA-Token`. Deux formes, gérées par `auth login` (v0.9.2, 07/10/2026) :
   - QCM (question secrète) : `connexion/doubleauth.awp` get/post ;
   - **code TOTP** si l'utilisateur a activé la validation par application d'authentification dans son compte (`data.totp = true`) : `POST restv3/ws/auth/totp`, JSON `{codeVerification}`, en-tête `2FA-Token`, 403 = code refusé — la commande demande le code à 6 chiffres.
@@ -40,7 +43,8 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 
 ## Lire la messagerie du secrétariat
 
-- Le connecteur perso ne lit que la boîte du compte connecté. La boîte EcoleDirecte du secrétariat se consulte par les notifications qu'EcoleDirecte envoie à secretariat@ (Outlook partagé, connecteur Microsoft 365 : `mailboxOwnerEmail=secretariat@…`, `sender=information@ecoledirecte.fr`) : objet et texte complet du message, mais pas les pièces jointes (« les N pièce(s) jointe(s) » à ouvrir dans EcoleDirecte).
+- Directement depuis le 08/10/2026 : serveur `ecoledirecte-secretariat` (instance du serveur perso sur le compte du secrétariat) — `ed_perso_messages_list` (ne marque rien lu), `ed_perso_message_lire` (remet en non lu par défaut), pièces jointes listées.
+- Secours : les notifications qu'EcoleDirecte envoie à secretariat@ (Outlook partagé, connecteur Microsoft 365 : `mailboxOwnerEmail=secretariat@…`, `sender=information@ecoledirecte.fr`) — objet et texte, sans les pièces jointes.
 
 ## Tests
 
@@ -79,7 +83,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 Chaque skill chargée dans Claude a sa source dans le dossier `skills/` d'un dépôt :
 - `edumoov-mcp` (public) : edumoov-communication-familles, edumoov-controle-rentree, maintenance-connecteur-edumoov ;
 - `ecoledirecte-admin-mcp` (public) : ecoledirecte-communication-familles, ecoledirecte-identifiants-familles, ecoledirecte-parametrage, maintenance-connecteur-ecoledirecte ;
-- `charlemagne-mcp` (public) : charlemagne-affectation-photos, charlemagne-import-infos-complementaires, charlemagne-import-mail-telephone ;
-- `charlemagne-tools` (privé, skills nominatives) : charlemagne-facturation, charlemagne-import-emploi-du-temps, charlemagne-serveur-aplim, charlemagne-personnel-annuaire, ecoledirecte-appel-primaire, edumoov-appel, fiches-forfaits-rentree, scans-documents-eleves.
+- `charlemagne-mcp` (public) : charlemagne-affectation-photos, charlemagne-formats-import-aplim, charlemagne-import-infos-complementaires, charlemagne-import-mail-telephone ;
+- `charlemagne-tools` (privé, skills nominatives) : charlemagne-facturation, charlemagne-import-emploi-du-temps, charlemagne-import-frais-facturation, charlemagne-serveur-aplim, charlemagne-personnel-annuaire, ecoledirecte-appel-primaire, edumoov-appel, fiches-forfaits-rentree, scans-documents-eleves.
 
 Une skill se modifie par une carte de proposition ; une fois qu'elle est enregistrée par Rémi, recopier le SKILL.md enregistré (copie synchronisée de la session) dans le dépôt, commiter et pousser, puis vérifier que les deux versions sont identiques (empreinte du corps). Une skill avec des données nominatives ou des chemins de serveur de l'école va dans `charlemagne-tools`, jamais dans un dépôt public. Vers le Mac : Desktop Commander `write_file` (créer le dossier avant ; mode `rewrite` pour remplacer un fichier existant).
