@@ -78,3 +78,43 @@ def test_pupil_without_class_is_labelled():
     eleves = [{"id": 9, "nom": "X", "prenom": "Y", "idClasse": 0, "libelleClasse": "", "dejaConnecte": False}]
     res = compute_activation([], eleves)
     assert res["classes"][0]["classe"] == "(sans classe)"
+
+
+def _err550():
+    import httpx
+    return httpx.Response(200, json={"code": 550, "token": "tok-next", "host": "HTTP1",
+                                     "message": "Une erreur est survenue lors de l'exécution du programme !",
+                                     "data": {}})
+
+
+@respx.mock
+async def test_full_family_directory_rebuilt_letter_by_letter_on_550(tmp_path, monkeypatch):
+    """09/10/2026 : la liste complète des familles plante (code 550) à cause d'un compte
+    au nom « XXXXXXXXXX » ; toute recherche qui le contient plante aussi."""
+    def familles(request):
+        q = request.url.params["filterSearch"]
+        if q in ("", "x"):
+            return _err550()
+        hits = [f for f in FAMILLES if q in (f["nom"] + " " + f["prenom"]).lower()]
+        return ok({"utilisateurs": hits})
+    respx.post(url__startswith=f"{API}utilisateurs/familles.awp").mock(side_effect=familles)
+    respx.post(url__startswith=f"{API}utilisateurs/eleves.awp").mock(return_value=ok({"utilisateurs": ELEVES}))
+    client = EcoleDirecteAdminClient(auth=fake_auth(tmp_path))
+    monkeypatch.setattr(server, "_client", client)
+    fam = await client.list_utilisateurs("familles", "")
+    assert sorted(f["id"] for f in fam) == [10, 11, 12]          # sans doublon
+    info = client.annuaires_reconstitues["familles"]
+    assert info["comptes"] == 3 and info["lettres_en_erreur"] == ["x"]
+    res = await server.ed_admin_activation_comptes()
+    assert res["synthese"]["comptes_responsables"] == 3
+    assert res["annuaires_reconstitues"]["familles"]["lettres_en_erreur"] == ["x"]
+
+
+@respx.mock
+async def test_550_on_filtered_search_is_not_hidden(tmp_path):
+    respx.post(url__startswith=f"{API}utilisateurs/familles.awp").mock(return_value=_err550())
+    client = EcoleDirecteAdminClient(auth=fake_auth(tmp_path))
+    import pytest
+    from ecoledirecte_admin_mcp.client import ServerProgramError
+    with pytest.raises(ServerProgramError):
+        await client.list_utilisateurs("familles", "xx")

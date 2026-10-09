@@ -69,6 +69,17 @@ class EcoleDirecteApiError(ToolError):
     """Erreur renvoyée par l'API admin."""
 
 
+class ServerProgramError(EcoleDirecteApiError):
+    """Code 550 : le programme a planté côté EcoleDirecte (« Une erreur est survenue
+    lors de l'exécution du programme »). Vu le 09/10/2026 sur l'annuaire complet des
+    familles, à cause d'un seul compte au nom anormal (« XXXXXXXXXX »)."""
+
+
+# Lettres utilisées pour reconstituer un annuaire quand la liste complète plante
+# (la recherche ignore accents et casse : « é » renvoie les mêmes comptes que « e »).
+LETTRES_RECONSTITUTION = "abcdefghijklmnopqrstuvwxyz"
+
+
 def check_allowed(path: str, verbe: str) -> None:
     if verbe.lower() != "get":
         raise ForbiddenEndpointError(
@@ -147,6 +158,8 @@ class EcoleDirecteAdminClient:
     def __init__(self, auth: AdminAuth | None = None, http: httpx.AsyncClient | None = None):
         self._auth = auth or AdminAuth()
         self._http = http or httpx.AsyncClient(timeout=SETTINGS.timeout_seconds)
+        # Dernier annuaire complet reconstitué lettre par lettre (voir list_utilisateurs).
+        self.annuaires_reconstitues: dict[str, dict[str, Any]] = {}
 
     @property
     def auth(self) -> AdminAuth:
@@ -172,7 +185,8 @@ class EcoleDirecteAdminClient:
             if code == 403:
                 raise EcoleDirecteApiError(f"GET {path} : accès refusé (403) pour ce compte admin.")
             if code != 200:
-                raise EcoleDirecteApiError(
+                cls = ServerProgramError if code == 550 else EcoleDirecteApiError
+                raise cls(
                     f"GET {path} : code {code} — {payload.get('message') or 'pas de message'}"
                 )
             return payload.get("data")
@@ -236,6 +250,43 @@ class EcoleDirecteAdminClient:
         """
         if type_utilisateurs not in _ALLOWED_TYPES_UTILISATEURS:
             raise ToolError(f"type_utilisateurs doit être parmi {_ALLOWED_TYPES_UTILISATEURS}")
+        if filtre == "" and type_utilisateurs in ("familles", "eleves", "entreprises"):
+            try:
+                users = await self._list_utilisateurs_once(type_utilisateurs, "")
+            except ServerProgramError:
+                return await self._reconstituer_annuaire(type_utilisateurs)
+            self.annuaires_reconstitues.pop(type_utilisateurs, None)
+            return users
+        return await self._list_utilisateurs_once(type_utilisateurs, filtre)
+
+    async def _reconstituer_annuaire(self, type_utilisateurs: str) -> list[dict[str, Any]]:
+        """Contournement (09/10/2026) : si la liste complète plante (code 550, un compte
+        illisible côté EcoleDirecte), union des recherches lettre par lettre, sans
+        doublon. Les recherches qui plantent elles aussi sont ignorées et signalées :
+        le compte en cause n'y figure pas, tous les autres comptes contenant au moins
+        une autre lettre sont retrouvés."""
+        par_id: dict[Any, dict[str, Any]] = {}
+        en_erreur: list[str] = []
+        for lettre in LETTRES_RECONSTITUTION:
+            try:
+                lot = await self._list_utilisateurs_once(type_utilisateurs, lettre)
+            except ServerProgramError:
+                en_erreur.append(lettre)
+                continue
+            for u in lot:
+                par_id.setdefault(u.get("id"), u)
+        users = list(par_id.values())
+        self.annuaires_reconstitues[type_utilisateurs] = {
+            "comptes": len(users),
+            "lettres_en_erreur": en_erreur,
+            "note": ("Annuaire complet refusé par EcoleDirecte (code 550) : reconstitué par "
+                     "recherches lettre par lettre. Les comptes dont le nom ne contient que les "
+                     f"lettres {', '.join(en_erreur) or '—'} manquent (compte anormal à faire "
+                     "corriger par Aplim)."),
+        }
+        return users
+
+    async def _list_utilisateurs_once(self, type_utilisateurs: str, filtre: str) -> list[dict[str, Any]]:
         data = await self.get(f"utilisateurs/{type_utilisateurs}", {"filterSearch": filtre})
         if not isinstance(data, dict) or not isinstance(data.get("utilisateurs"), list):
             raise EcoleDirecteApiError(
