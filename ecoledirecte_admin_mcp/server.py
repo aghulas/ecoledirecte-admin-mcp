@@ -430,6 +430,9 @@ async def ed_admin_activation_comptes(classe: str | None = None, inclure_noms: b
     familles = await c.list_utilisateurs("familles", "")
     eleves = await c.list_utilisateurs("eleves", "")
     result = compute_activation(familles, eleves, classe=classe, inclure_noms=inclure_noms)
+    reconstitues = {k: v for k, v in c.annuaires_reconstitues.items() if k in ("familles", "eleves")}
+    if reconstitues:
+        result["annuaires_reconstitues"] = reconstitues
     if classe and not result["classes"]:
         raise ToolError(f"Classe '{classe}' introuvable (utilise ed_admin_classes_list).")
     return result
