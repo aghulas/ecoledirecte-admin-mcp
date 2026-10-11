@@ -358,3 +358,90 @@ async def _telecharger_dans_compte(admin_client, compte: dict[str, Any], documen
             "fichier": str(chemin), "taille_octets": len(contenu),
             "telecharge_le": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "note": "Copie locale (droits 600, jamais écrasée). Lecture seule côté EcoleDirecte."}
+
+
+# ----------------------------------------------------------------------
+# Téléchargement d'une pièce déposée par une famille (LECTURE)
+# ----------------------------------------------------------------------
+#   POST v3/telechargement.awp?verbe=get&fichierId=<televersement.libelle>&leTypeDeFichier=LISTE_PIECE
+#   corps data={"forceDownload":0, "idListePiece", "idPersonne", "idPiece"}
+# Même appel que le bouton de la pièce dans « Documents › Pièces à verser » du site
+# famille (additionalDataTelechargement du front). Fonctionne aussi pour une pièce
+# verrouillée (récupérée par Charlemagne) : vérifié en réel le 11/10/2026. Sans les
+# trois identifiants dans le corps, ou avec le type LISTE_PIECE_MODELE, le serveur
+# renvoie une page HTML.
+
+FORMATS = ((b"%PDF", ".pdf"), (b"\xff\xd8\xff", ".jpg"), (b"\x89PNG", ".png"))
+
+
+def _extension(contenu: bytes) -> str | None:
+    return next((ext for magie, ext in FORMATS if contenu.startswith(magie)), None)
+
+
+async def telecharger_piece(admin_client, id_eleve: int, id_piece: int, id_personne: int | None = None,
+                            id_liste: int | None = None, compte_id: int | None = None) -> dict[str, Any]:
+    dossier = dossier_telechargements() / "pieces"
+    dossier.mkdir(parents=True, exist_ok=True)
+    res = await dp.resoudre_eleve_famille(admin_client, id_eleve)
+    comptes = [dp.choisir_compte(res, compte_id)] if compte_id is not None else res["comptes"]
+    trouves: list[str] = []
+    for compte in comptes:
+        fam = await dp.ouvrir_supervision(admin_client, compte)
+        try:
+            lp = await fam.documents()
+            pieces = {int(p["id"]): p for p in lp.get("pieces", []) if "id" in p}
+            listes = {int(x["id"]): x for x in lp.get("listesPieces", []) if "id" in x}
+            noms = {int(x.get("id")): f"{x.get('prenom', '')} {x.get('nom', '')}".strip()
+                    for x in lp.get("personnes", [])}
+            cands = [t for t in lp.get("televersements", [])
+                     if int(t.get("idPiece", -1)) == int(id_piece) and t.get("libelle")
+                     and (id_personne is None or int(t.get("idPersonne", -1)) == int(id_personne))
+                     and (id_liste is None or int(t.get("idListePiece", -1)) == int(id_liste))]
+            if len(cands) > 1:
+                qui = ", ".join(f"{noms.get(int(t['idPersonne']), t['idPersonne'])} (id_personne "
+                                f"{t['idPersonne']})" for t in cands)
+                raise ToolError(f"Plusieurs dépôts pour cette pièce : {qui}. Préciser id_personne.")
+            if not cands:
+                continue
+            t = cands[0]
+            pc = pieces.get(int(t["idPiece"]), {})
+            liste = listes.get(int(t["idListePiece"]), {})
+            libelle = f"{liste.get('libelle', '')} {pc.get('libelle', '')}"
+            if MOTIFS_BANCAIRES.search(libelle):
+                raise ToolError("Refusé : pièce bancaire (mandat SEPA, RIB…) : jamais téléchargée par le connecteur.")
+            url = (f"{dp.WWW_API_BASE}telechargement.awp?verbe=get&fichierId={t['libelle']}"
+                   f"&leTypeDeFichier=LISTE_PIECE&v={dp.WWW_API_VERSION}")
+            corps = {"forceDownload": 0, "idListePiece": t["idListePiece"],
+                     "idPersonne": t["idPersonne"], "idPiece": t["idPiece"]}
+            r = await fam.http.post(url, content=encode_form_data(corps),
+                                    headers={**fam._headers(),
+                                             "Content-Type": "application/x-www-form-urlencoded"},
+                                    timeout=120)
+        finally:
+            await fam.http.aclose()
+        contenu = r.content
+        ext = _extension(contenu)
+        if r.status_code != 200 or ext is None:
+            raise ToolError(f"Téléchargement refusé ou format inattendu (HTTP {r.status_code}, "
+                            f"{r.headers.get('content-type')}).")
+        if len(contenu) > MAX_BYTES:
+            raise ToolError("Pièce trop volumineuse (> 20 Mo).")
+        personne = noms.get(int(t["idPersonne"]), str(t["idPersonne"]))
+        doc = {"id": f"{t['idListePiece']}-{t['idPiece']}-{t['idPersonne']}",
+               "libelle": f"{pc.get('libelle', 'piece')} {personne}", "date": (t.get("date") or "")[:10] or None}
+        chemin = nom_fichier(doc, dossier).with_suffix(ext)
+        n = 2
+        while chemin.exists():
+            chemin = chemin.with_name(f"{chemin.stem}__{n}{ext}")
+            n += 1
+        fd = os.open(chemin, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(contenu)
+        return {"liste": liste.get("libelle"), "piece": pc.get("libelle"), "personne": personne,
+                "date_depot": t.get("date"), "verrouillee": t.get("isLock"),
+                "compte": _libelle_compte(compte), "fichier": str(chemin),
+                "taille_octets": len(contenu), "format": ext[1:],
+                "note": "Copie locale (droits 600, jamais écrasée). Lecture seule côté EcoleDirecte ; "
+                        "données personnelles : ne pas diffuser."}
+    raise ToolError("Aucun dépôt trouvé pour cette pièce dans les comptes de la famille "
+                    "(voir ed_admin_pieces_etat : id de la pièce et id_personne).")
