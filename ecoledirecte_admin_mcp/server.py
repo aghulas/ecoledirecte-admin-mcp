@@ -38,7 +38,7 @@ from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
 from .demandes import demande_activites, demande_coordonnees, demande_telephones
 from .depot_pieces import deposer_piece, etat_pieces
-from .documents import documents_ecole, documents_famille, telecharger_document
+from .documents import documents_ecole, documents_famille, telecharger_document, telecharger_piece
 from .edt import emploi_du_temps_enseignant
 
 mcp = MCPServer(
@@ -481,7 +481,8 @@ async def ed_admin_pieces_etat(id_eleve: int, compte_id: int | None = None) -> A
     à quelle date, et s'il est verrouillé (récupéré par Charlemagne). Indique aussi
     si le connecteur est autorisé à déposer dans chaque liste. Sert à savoir ce
     qu'une famille a déjà déposé elle-même avant un dépôt, ou à vérifier un dépôt.
-    Ouvre une supervision en lecture seule ; ne télécharge ni ne modifie rien.
+    Ouvre une supervision en lecture seule ; ne télécharge ni ne modifie rien
+    (pour récupérer une pièce déposée : ed_admin_piece_telecharger).
     `id_eleve` = un élève de la famille ; `compte_id` = compte famille précis
     (par défaut le responsable)."""
     return await etat_pieces(_get_client(), id_eleve, compte_id)
@@ -523,9 +524,24 @@ async def ed_admin_document_telecharger(id_eleve: int, document_id: int, compte_
     ED_ADMIN_DOCUMENTS_DIR (droits 600, jamais écrasé) ; renvoie le chemin.
     `document_id` = champ `id` donné par ed_admin_documents_famille pour la même
     famille (`id_eleve` = un élève de la famille). Supervision en lecture seule.
-    Refuse les documents bancaires (mandat SEPA, RIB). Les pièces déposées par les
-    familles (pièces à verser) ne sont pas concernées."""
+    Refuse les documents bancaires (mandat SEPA, RIB). Pour une pièce déposée par
+    une famille (pièces à verser), utiliser ed_admin_piece_telecharger."""
     return await telecharger_document(_get_client(), id_eleve, document_id, compte_id, archive)
+
+
+@mcp.tool()
+async def ed_admin_piece_telecharger(id_eleve: int, id_piece: int, id_personne: int | None = None,
+                                     id_liste: int | None = None, compte_id: int | None = None) -> Any:
+    """LECTURE — télécharge une pièce DÉPOSÉE PAR UNE FAMILLE dans « Pièces à verser »
+    (justificatif APEL, certificat de scolarité, attestation d'assurance…), y compris
+    une pièce verrouillée (déjà récupérée par Charlemagne), et l'enregistre dans
+    ED_ADMIN_DOCUMENTS_DIR/pieces (PDF, ou JPG/PNG selon le dépôt ; droits 600,
+    jamais écrasé) ; renvoie le chemin. `id_piece` (et au besoin `id_personne`,
+    `id_liste`) = identifiants donnés par ed_admin_pieces_etat pour la même famille ;
+    tous les comptes rattachés à l'élève sont lus, sauf `compte_id`. Supervision en
+    lecture seule. Refuse les pièces bancaires (RIB, mandat SEPA). Données
+    personnelles : copie locale, à ne pas diffuser."""
+    return await telecharger_piece(_get_client(), id_eleve, id_piece, id_personne, id_liste, compte_id)
 
 
 @mcp.tool()
