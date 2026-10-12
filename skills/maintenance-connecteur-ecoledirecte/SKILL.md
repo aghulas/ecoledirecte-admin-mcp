@@ -41,6 +41,13 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 
 - Les documents sont publiés **compte par compte** (chaque parent a son espace ; le même document peut avoir un id différent chez chacun, un mandat SEPA peut n'exister que chez un parent). `documents.py` lit tous les comptes rattachés à l'élève et fusionne (`visible_pour`, `seulement_pour`, `ids_par_compte`) ; le téléchargement cherche l'id dans chaque compte (v0.9.1, 07/10/2026). Toute nouvelle lecture par supervision famille doit faire de même.
 
+## Pièces à verser déposées par les familles
+
+- Lecture : `ed_admin_pieces_etat` (état, verrouillé = récupéré par Charlemagne), `ed_admin_piece_telecharger` (contenu, même verrouillé : `telechargement.awp`, type `LISTE_PIECE`, `fichierId` = libellé du dépôt, ids dans le corps).
+- **Collision d'identifiants** : ids d'élèves et de responsables se recouvrent, et `familledocuments` renvoie aussi des dépôts d'autres familles. Toujours filtrer `idPersonne in liste.personnes` (fait dans `documents._depots_correspondants`, v0.12.1) ; tout nouveau code sur `televersements` doit faire de même.
+- Dépôt : `ed_admin_deposer_piece` (simulation vérifiée, ne remplace jamais une case remplie : déposer sur le compte de l'autre parent si la case est prise).
+- **Suppression : jamais par EcoleDirecte.** `POST listePiece/<liste>/<personne>/<pièce>.awp?verbe=delete` (bouton du site famille) a renvoyé **403 avec avertissement de sécurité** sur une pièce verrouillée (12/10/2026) : ne pas retenter, ne pas recoder. Une pièce se supprime dans Charlemagne ; la suppression part vers EcoleDirecte à la synchro suivante. Méthode de travail sur les pièces : skill `ecoledirecte-pieces-familles`.
+
 ## Lire la messagerie du secrétariat
 
 - Directement depuis le 08/10/2026 : serveur `ecoledirecte-secretariat` (instance du serveur perso sur le compte du secrétariat) — `ed_perso_messages_list` (ne marque rien lu), `ed_perso_message_lire` (remet en non lu par défaut), pièces jointes listées.
@@ -68,7 +75,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Commit depuis le Mac (Desktop Commander) : l'outil peut refuser une commande dont le message de commit est écrit dedans (« Command not allowed », constaté le 08/10/2026 avec un message en heredoc contenant des balises `<div>`) — écrire le message dans un fichier temporaire (`write_file`), puis `git commit -F <fichier>`, et supprimer le fichier.
 - Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre (numéro de correctif pour un correctif).
 - Fusion `--ff-only` dans `main`, push, suppression de la branche.
-- Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure.
+- Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac, sans `sleep` long : l'appel est coupé au bout de 60 s) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure.
 - Rappeler à Rémi de **redémarrer complètement Claude Desktop** : les outils d'une conversation déjà ouverte gardent l'ancienne version.
 - Toute édition de `claude_desktop_config.json` : sauvegarde horodatée avant, validation JSON après.
 
@@ -85,6 +92,6 @@ Chaque skill chargée dans Claude a sa source dans le dossier `skills/` d'un dé
 - `edumoov-mcp` (public) : edumoov-communication-familles, edumoov-controle-rentree, maintenance-connecteur-edumoov ;
 - `ecoledirecte-admin-mcp` (public) : ecoledirecte-communication-familles, ecoledirecte-identifiants-familles, ecoledirecte-parametrage, maintenance-connecteur-ecoledirecte ;
 - `charlemagne-mcp` (public) : charlemagne-affectation-photos, charlemagne-formats-import-aplim, charlemagne-import-infos-complementaires, charlemagne-import-mail-telephone ;
-- `charlemagne-tools` (privé, skills nominatives) : charlemagne-facturation, charlemagne-import-emploi-du-temps, charlemagne-import-frais-facturation, charlemagne-serveur-aplim, charlemagne-personnel-annuaire, ecoledirecte-appel-primaire, edumoov-appel, fiches-forfaits-rentree, scans-documents-eleves.
+- `charlemagne-tools` (privé, skills nominatives) : charlemagne-controle-adresses, charlemagne-facturation, charlemagne-import-emploi-du-temps, charlemagne-import-frais-facturation, charlemagne-serveur-aplim, charlemagne-personnel-annuaire, charlemagne-suivi-prestations, ecoledirecte-appel-primaire, ecoledirecte-pieces-familles, edumoov-appel, fiches-forfaits-rentree, scans-documents-eleves.
 
 Une skill se modifie par une carte de proposition ; une fois qu'elle est enregistrée par Rémi, recopier le SKILL.md enregistré (copie synchronisée de la session) dans le dépôt, commiter et pousser, puis vérifier que les deux versions sont identiques (empreinte du corps). Une skill avec des données nominatives ou des chemins de serveur de l'école va dans `charlemagne-tools`, jamais dans un dépôt public. Vers le Mac : Desktop Commander `write_file` (créer le dossier avant ; mode `rewrite` pour remplacer un fichier existant).
