@@ -14,7 +14,7 @@ P2 = {"id": 952, "nom": "TEST", "prenom": "Mere", "type": "conjoint"}
 
 
 def espace(televersements, liste="Justificatifs", piece="Justificatif APEL"):
-    return {"listesPieces": [{"id": 5, "libelle": liste, "type": "F", "personnes": [951]}],
+    return {"listesPieces": [{"id": 5, "libelle": liste, "type": "F", "personnes": [951, 952, 953]}],
             "pieces": [{"id": 12, "libelle": piece, "idListePiece": 5}],
             "personnes": [{"id": 951, "prenom": "Pere", "nom": "TEST"}],
             "televersements": televersements}
@@ -121,3 +121,12 @@ async def test_sans_dossier_refuse(monkeypatch):
     monkeypatch.delenv("ED_ADMIN_DOCUMENTS_DIR", raising=False)
     with pytest.raises(ToolError, match="ED_ADMIN_DOCUMENTS_DIR"):
         await docs_mod.telecharger_piece(object(), 1, 12)
+
+
+async def test_ignore_depot_d_une_autre_famille(monkeypatch, tmp_path):
+    # idPersonne absent de liste.personnes : dépôt d'une autre famille (ids qui se recouvrent)
+    fam = FakeFam(espace([dict(TV, idPersonne=829)]))
+    installer(monkeypatch, tmp_path, {951: fam, 952: FakeFam(espace([]))})
+    with pytest.raises(ToolError, match="Aucun dépôt"):
+        await docs_mod.telecharger_piece(object(), 1, 12)
+    assert fam.appels == []
