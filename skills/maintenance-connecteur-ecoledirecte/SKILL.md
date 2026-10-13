@@ -52,7 +52,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Lecture : `ed_admin_pieces_etat` (état, verrouillé = récupéré par Charlemagne), `ed_admin_piece_telecharger` (contenu, même verrouillé : `telechargement.awp`, type `LISTE_PIECE`, `fichierId` = libellé du dépôt, ids dans le corps).
 - **Collision d'identifiants** : ids d'élèves et de responsables se recouvrent, et `familledocuments` renvoie aussi des dépôts d'autres familles. Toujours filtrer `idPersonne in liste.personnes` (fait dans `documents._depots_correspondants`, v0.12.1) ; tout nouveau code sur `televersements` doit faire de même.
 - Dépôt : `ed_admin_deposer_piece` (simulation vérifiée, ne remplace jamais une case remplie : déposer sur le compte de l'autre parent si la case est prise).
-- **Suppression : jamais par EcoleDirecte.** `POST listePiece/<liste>/<personne>/<pièce>.awp?verbe=delete` (bouton du site famille) a renvoyé **403 avec avertissement de sécurité** sur une pièce verrouillée (12/10/2026) : ne pas retenter, ne pas recoder. Une pièce se supprime dans Charlemagne ; la suppression part vers EcoleDirecte à la synchro suivante. Méthode de travail sur les pièces : skill `ecoledirecte-pieces-familles`.
+- **Suppression : jamais par EcoleDirecte.** `POST listePiece/<liste>/<personne>/<pièce>.awp?verbe=delete` (bouton du site famille) a renvoyé **403 avec avertissement de sécurité** sur une pièce verrouillée (12/10/2026) : ne pas retenter, ne pas recoder. Une pièce se supprime dans Charlemagne (Tables › Gestion des pièces de dossier › Liste de pièces : « refuser la pièce » ou Gestion des documents › Supprimer) ; l'effet est immédiat dans EcoleDirecte (vérifié le 02/10/2026, sans attendre la synchro). Méthode de travail sur les pièces : skill `ecoledirecte-pieces-familles`.
 
 ## Lire la messagerie du secrétariat
 
@@ -78,6 +78,10 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
   Claude-Session: <lien de la session>
   ```
   (reprendre les lignes d'attribution indiquées par la session courante).
+- Depuis une VM Cowork (dossier `~/dev` monté), git ne peut pas effacer ses fichiers temporaires sans
+  l'autorisation de suppression du dossier : il laisse `.git/index.lock`, `HEAD.lock`, `tmp_obj_*` et le
+  commit suivant échoue. Demander l'autorisation (`device_request_delete_permission`) ou committer et
+  pousser depuis le Mac (Desktop Commander), qui a aussi les identifiants GitHub.
 - Commit depuis le Mac (Desktop Commander) : l'outil peut refuser une commande dont le message de commit est écrit dedans (« Command not allowed », constaté le 08/10/2026 avec un message en heredoc contenant des balises `<div>`) — écrire le message dans un fichier temporaire (`write_file`), puis `git commit -F <fichier>`, et supprimer le fichier.
 - Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre (numéro de correctif pour un correctif).
 - Fusion `--ff-only` dans `main`, push, suppression de la branche.
