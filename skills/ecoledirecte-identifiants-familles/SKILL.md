@@ -58,3 +58,5 @@ Adapter la liste des usages si le paramétrage change (ne jamais promettre une f
 ## Suivi de l'activation
 
 `ed_admin_activation_comptes` (sans classe = synthèse ; avec classe = listes nominatives, à ne restituer qu'au besoin). Refaire le point le lendemain de l'envoi puis chaque semaine ; proposer une relance ciblée des familles sans aucun parent connecté.
+
+- Les comptes affichés **« XXXXXXXXXX »** sont des familles **anonymisées** (option « Ne pas transmettre » de la rubrique « Mot de passe EcoleDirecte » de la fiche famille Charlemagne) : elles ne reçoivent pas d'identifiants et n'apparaissent pas dans le suivi ; ce n'est pas une anomalie (Aplim, 13/10/2026). L'admin EcoleDirecte n'offre pas de liste complète des familles et refuse les recherches en « x » (code 550, blocage voulu) : chercher une famille par son nom, ou passer par `ed_admin_activation_comptes`.

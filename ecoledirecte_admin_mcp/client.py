@@ -72,7 +72,15 @@ class EcoleDirecteApiError(ToolError):
 class ServerProgramError(EcoleDirecteApiError):
     """Code 550 : le programme a planté côté EcoleDirecte (« Une erreur est survenue
     lors de l'exécution du programme »). Vu le 09/10/2026 sur l'annuaire complet des
-    familles, à cause d'un seul compte au nom anormal (« XXXXXXXXXX »)."""
+    familles et sur toute recherche « x » à « xxxxxxxxxx ». Réponse d'Aplim du
+    13/10/2026 : blocage volontaire qui protège les fiches anonymisées (comptes
+    « XXXXXXXXXX », option « Ne pas transmettre » de la rubrique « Mot de passe
+    EcoleDirecte » de la fiche famille Charlemagne) ; pas d'annuaire complet possible."""
+
+
+class RechercheBloqueeError(ServerProgramError):
+    """Recherche composée uniquement de « x » : refusée par EcoleDirecte (code 550)
+    pour protéger les fiches anonymisées — comportement voulu, pas une panne."""
 
 
 # Lettres utilisées pour reconstituer un annuaire quand la liste complète plante
@@ -257,11 +265,22 @@ class EcoleDirecteAdminClient:
                 return await self._reconstituer_annuaire(type_utilisateurs)
             self.annuaires_reconstitues.pop(type_utilisateurs, None)
             return users
-        return await self._list_utilisateurs_once(type_utilisateurs, filtre)
+        try:
+            return await self._list_utilisateurs_once(type_utilisateurs, filtre)
+        except ServerProgramError as exc:
+            f = filtre.strip().lower()
+            if f and set(f) <= {"x"}:
+                raise RechercheBloqueeError(
+                    f"Recherche « {filtre} » refusée par EcoleDirecte (code 550) : blocage "
+                    "volontaire qui protège les fiches anonymisées (comptes « XXXXXXXXXX », "
+                    "option « Ne pas transmettre » dans Charlemagne — réponse d'Aplim du "
+                    "13/10/2026). Ce n'est pas une panne ; chercher par nom de famille."
+                ) from exc
+            raise
 
     async def _reconstituer_annuaire(self, type_utilisateurs: str) -> list[dict[str, Any]]:
-        """Contournement (09/10/2026) : si la liste complète plante (code 550, un compte
-        illisible côté EcoleDirecte), union des recherches lettre par lettre, sans
+        """Contournement (09/10/2026) : la liste complète est refusée (code 550, blocage
+        voulu par EcoleDirecte pour les fiches anonymisées), d'où l'union des recherches lettre par lettre, sans
         doublon. Les recherches qui plantent elles aussi sont ignorées et signalées :
         le compte en cause n'y figure pas, tous les autres comptes contenant au moins
         une autre lettre sont retrouvés."""
@@ -281,8 +300,10 @@ class EcoleDirecteAdminClient:
             "lettres_en_erreur": en_erreur,
             "note": ("Annuaire complet refusé par EcoleDirecte (code 550) : reconstitué par "
                      "recherches lettre par lettre. Les comptes dont le nom ne contient que les "
-                     f"lettres {', '.join(en_erreur) or '—'} manquent (compte anormal à faire "
-                     "corriger par Aplim)."),
+                     f"lettres {', '.join(en_erreur) or '—'} manquent : ce sont les fiches "
+                     "anonymisées (« XXXXXXXXXX », option « Ne pas transmettre » dans "
+                     "Charlemagne), bloquées volontairement par EcoleDirecte — normal, à ne "
+                     "pas supprimer (Aplim, 13/10/2026)."),
         }
         return users
 
