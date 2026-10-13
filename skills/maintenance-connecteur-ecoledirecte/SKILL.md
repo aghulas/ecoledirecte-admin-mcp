@@ -41,6 +41,12 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 
 - Les documents sont publiés **compte par compte** (chaque parent a son espace ; le même document peut avoir un id différent chez chacun, un mandat SEPA peut n'exister que chez un parent). `documents.py` lit tous les comptes rattachés à l'élève et fusionne (`visible_pour`, `seulement_pour`, `ids_par_compte`) ; le téléchargement cherche l'id dans chaque compte (v0.9.1, 07/10/2026). Toute nouvelle lecture par supervision famille doit faire de même.
 
+## Annuaire des familles et fiches anonymisées
+
+- **Pas d'annuaire complet** dans l'admin EcoleDirecte : un compte ne se trouve que par une recherche d'au moins deux caractères (réponse d'Aplim du 13/10/2026).
+- Les comptes **« XXXXXXXXXX »** (nom et prénom) sont des **fiches anonymisées** à la demande de l'école : option « Ne pas transmettre » de la rubrique « Mot de passe EcoleDirecte » de la fiche famille Charlemagne. Normaux, **à ne pas supprimer** ; la famille garde son vrai nom dans Charlemagne (pas de champ correspondant identifié dans l'export).
+- La liste complète et **toute recherche composée uniquement de « x »** (de « x » à « xxxxxxxxxx ») renvoient le **code 550** : blocage **volontaire** d'Aplim pour protéger ces fiches, pas une panne (incident du 09/10/2026, clos le 13/10/2026). Le client reconstitue l'annuaire lettre par lettre (`_reconstituer_annuaire`, la lettre « x » est signalée et ignorée) et lève `RechercheBloqueeError` (message explicatif) sur une recherche en « x » (v0.12.2). Ne jamais signaler ces comptes à Aplim comme anomalie.
+
 ## Pièces à verser déposées par les familles
 
 - Lecture : `ed_admin_pieces_etat` (état, verrouillé = récupéré par Charlemagne), `ed_admin_piece_telecharger` (contenu, même verrouillé : `telechargement.awp`, type `LISTE_PIECE`, `fichierId` = libellé du dépôt, ids dans le corps).

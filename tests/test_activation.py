@@ -118,3 +118,26 @@ async def test_550_on_filtered_search_is_not_hidden(tmp_path):
     from ecoledirecte_admin_mcp.client import ServerProgramError
     with pytest.raises(ServerProgramError):
         await client.list_utilisateurs("familles", "xx")
+
+
+@respx.mock
+async def test_x_only_search_explains_anonymised_accounts(tmp_path):
+    """13/10/2026 (Aplim) : une recherche « x » à « xxxxxxxxxx » est bloquée
+    volontairement pour protéger les fiches anonymisées."""
+    respx.post(url__startswith=f"{API}utilisateurs/familles.awp").mock(return_value=_err550())
+    client = EcoleDirecteAdminClient(auth=fake_auth(tmp_path))
+    import pytest
+    from ecoledirecte_admin_mcp.client import RechercheBloqueeError
+    with pytest.raises(RechercheBloqueeError, match="anonymis"):
+        await client.list_utilisateurs("familles", "XX")
+
+
+@respx.mock
+async def test_550_on_other_search_stays_a_server_error(tmp_path):
+    respx.post(url__startswith=f"{API}utilisateurs/familles.awp").mock(return_value=_err550())
+    client = EcoleDirecteAdminClient(auth=fake_auth(tmp_path))
+    import pytest
+    from ecoledirecte_admin_mcp.client import RechercheBloqueeError, ServerProgramError
+    with pytest.raises(ServerProgramError) as e:
+        await client.list_utilisateurs("familles", "ab")
+    assert not isinstance(e.value, RechercheBloqueeError)
