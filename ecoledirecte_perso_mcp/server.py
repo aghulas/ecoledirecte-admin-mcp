@@ -21,6 +21,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from .messagerie_ecriture import modifier_brouillon, preparer_message, rechercher_contacts, supprimer_brouillon
 from .client import EcoleDirectePersoClient
+from .pieces_jointes import telecharger_piece_jointe
 
 mcp = MCPServer(
     name="ecoledirecte-perso",
@@ -121,6 +122,20 @@ async def ed_perso_message_lire(id_message: int, boite: str = "received",
     « non lu » s'il l'était avant. `boite` = dossier du message ('received',
     'sent', 'archived', 'draft')."""
     return await _get_client().lire_message(id_message, boite, remettre_non_lu)
+
+
+@mcp.tool()
+async def ed_perso_piece_jointe_telecharger(id_message: int, id_fichier: int | None = None,
+                                            boite: str = "received") -> Any:
+    """Télécharge la pièce jointe `id_fichier` d'un message de la messagerie (toutes
+    ses pièces jointes si `id_fichier` est omis) dans le dossier local ED_PERSO_PJ_DIR,
+    et renvoie le chemin de chaque fichier enregistré. Les ids viennent de
+    ed_perso_messages_list (champ files de chaque message). N'ouvre PAS le message :
+    son état lu/non lu est inchangé. Garde-fous : le fichier doit appartenir au
+    message ; documents bancaires (mandat SEPA, RIB…) refusés ; 20 Mo au plus ; PDF,
+    image ou document Office ; jamais d'écrasement (droits 600). Outil refusé si
+    ED_PERSO_PJ_DIR n'est pas défini (serveur distant)."""
+    return await telecharger_piece_jointe(_get_client(), id_message, id_fichier, boite)
 
 
 @mcp.tool()
