@@ -299,6 +299,41 @@ class EcoleDirectePersoClient:
             return {"unc": data["unc"], "libelle": data.get("libelle") or chemin.name}
         raise AssertionError("unreachable")
 
+    async def telecharger_piece_jointe_brut(self, id_fichier: int) -> bytes:
+        """Contenu d'une pièce jointe de message (comme le bouton de téléchargement du
+        front : POST telechargement.awp?verbe=get&fichierId=<id>&leTypeDeFichier=
+        PIECE_JOINTE). Lecture seule, ne marque aucun message lu. Appelé uniquement par
+        pieces_jointes.telecharger_piece_jointe, qui vérifie d'abord que le fichier
+        appartient bien au message indiqué (liste de la messagerie)."""
+        for attempt in (1, 2):
+            session = await self._auth.ensure_session(self._http)
+            params = {"verbe": "get", "fichierId": int(id_fichier), "leTypeDeFichier": "PIECE_JOINTE",
+                      "v": SETTINGS.api_version}
+            url = f"{SETTINGS.data_base}/telechargement.awp?{urlencode(params)}"
+            try:
+                resp = await self._http.post(url, content=encode_form_data(
+                    {"forceDownload": 0, "anneeMessages": SETTINGS.annee}), headers={
+                    "Content-Type": "application/x-www-form-urlencoded", "X-Token": session.token,
+                    "User-Agent": SETTINGS.user_agent}, timeout=120)
+            except httpx.HTTPError as exc:
+                raise EcoleDirectePersoApiError(f"telechargement : réseau {type(exc).__name__}") from exc
+            if resp.status_code != 200:
+                raise EcoleDirectePersoApiError(f"telechargement : HTTP {resp.status_code}")
+            contenu = resp.content
+            if contenu[:1] == b"{":  # enveloppe JSON = erreur (jeton expiré, fichier introuvable…)
+                try:
+                    payload = resp.json()
+                except ValueError:
+                    return contenu
+                self._auth.update_token(payload.get("token"))
+                if payload.get("code") in AUTH_EXPIRED_CODES and attempt == 1:
+                    self._auth.invalidate_token()
+                    continue
+                raise EcoleDirectePersoApiError(f"telechargement : code {payload.get('code')} — "
+                                                f"{payload.get('message') or ''}")
+            return contenu
+        raise AssertionError("unreachable")
+
     async def lire_brouillon_brut(self, id_message: int) -> dict[str, Any]:
         """Brouillon tel que le renvoie EcoleDirecte (objet, contenu base64, destinataires
         `to` avec role et to_cc_cci, pièces jointes) — pour le réenregistrer modifié.
