@@ -91,19 +91,27 @@ Une seule fois, dans le Terminal :
 | `ed_admin_piece_telecharger(id_eleve, id_piece, id_personne?, id_liste?, compte_id?)` | télécharge une pièce **déposée par une famille** (pièces à verser), même verrouillée par Charlemagne, vers `ED_ADMIN_DOCUMENTS_DIR/pieces` (PDF, JPG ou PNG ; droits 600, jamais écrasé) — appel `telechargement.awp` avec `leTypeDeFichier=LISTE_PIECE`, `fichierId` = libellé du dépôt et `idListePiece`/`idPersonne`/`idPiece` dans le corps  ; ignore les dépôts d'une autre famille renvoyés par l'API (identifiants d'élèves et de responsables qui se recouvrent : seuls les dépôts dont `idPersonne` figure dans `liste.personnes` sont retenus, comme dans le front); refuse les pièces bancaires |
 | `ed_admin_demande_activites(id_eleve, activites?, regime?, confirm?)` | **ÉCRITURE** — demande de modification des activités (jours L/M/J/V) et/ou du régime, validée ensuite dans Charlemagne |
 | `ed_admin_demande_telephones(compte_id, confirm?)` | **ÉCRITURE** — reformate les téléphones d'une famille (« 06 12 34 56 78 ») par demande de modification des coordonnées |
+| `ed_admin_codes_connexion_lire(role, id_utilisateur)` | **LECTURE (secret)** — récupère l'identifiant + mot de passe de première connexion d'un compte (famille/personnel qui n'arrive pas à activer son espace). Les codes sont écrits dans un fichier local (0600, `ED_ADMIN_CODES_DIR`), jamais renvoyés dans la réponse |
+| `ed_admin_codes_connexion_regenerer(role, id_utilisateur, confirm?)` | **ÉCRITURE** — régénère les codes de première connexion puis les relit (fichier local). ⚠️ réinitialise identifiant + mot de passe et **supprime les associations de comptes** ; réservé aux comptes jamais activés |
+| `ed_admin_compte_debloquer(role, id_utilisateur, confirm?)` | **ÉCRITURE** — débloque un compte verrouillé après trop d'essais (aperçu = état de blocage) |
+| `ed_admin_demander_changement_mdp(role, id_utilisateur, confirm?)` | **ÉCRITURE** — force le changement de mot de passe à la prochaine connexion (compte déjà activé) |
+
+`role` : `eleve`, `responsable`, `conjoint`, `personnel` ou `professeur` (ou le code court `E`/`1`/`2`/`A`/`P`).
 
 ## Garde-fous (testés, `pytest`)
 
-- Seul `verbe=get` peut partir du client, **sauf `set_parametre`** (la seule
-  méthode d'écriture, explicitement isolée — voir ci-dessous).
-- Bloqués même en lecture : `compteOrigineED`, `supervisionmobile`, `supervision`
-  (identifiants d'autres utilisateurs / usurpation de session), gestion des logins,
-  `banques`, fichiers.
+- Seul `verbe=get` peut partir du client par la route générique ; les écritures
+  passent par des méthodes dédiées, isolées et recensées (voir ci-dessous).
+- Bloqués par la route générique, **même en lecture** : `compteOrigineED`,
+  `blockingState`, `supervisionmobile`, `supervision` (identifiants d'autres
+  utilisateurs / usurpation de session), gestion des logins, `banques`, fichiers.
+  `compteOrigineED` et `blockingState` ne sont atteignables que par les quatre
+  outils de **gestion des comptes de connexion** ci-dessous (phase d'activation).
 - `badge` et `photo` retirés des fiches par défaut (`include_sensitive_fields=True` pour les obtenir).
 - Paramètres ressemblant à des secrets (clés, certificats, mots de passe, IBAN…) masqués.
 - Aucun token ni mot de passe dans les messages d'erreur.
 
-### ⚠️ Écriture : six outils seulement
+### ⚠️ Écriture et codes de connexion : outils isolés et recensés
 
 | Outil | Depuis | Activation | Détails |
 |---|---|---|---|
@@ -113,9 +121,15 @@ Une seule fois, dans le Terminal :
 | `ed_admin_demande_telephones` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 |
 | `ed_admin_connecteur_activer` | 02/10/2026 | `ED_ADMIN_CONNECTEURS_ACTIF=1` | §10 ; seulement les applis « universelles » ; écrit `Sites/Connecteur/…/Actif` (et le RNE d'une appli CAS) comme l'écran Connecteurs ; refuse l'activation si clé d'API, activation par classe ou paramètres complémentaires |
 | `ed_admin_demande_coordonnees` | 30/09/2026 | `ED_ADMIN_DEMANDES_ACTIF=1` | §9 ; type `coordonnees` : adresse, et pour chaque parent nom, mails, téléphones, profession, société, CSP ; jamais la banque |
+| `ed_admin_codes_connexion_lire` | 17/10/2026 | `ED_ADMIN_COMPTES_ACTIF=1` + `ED_ADMIN_CODES_DIR` | §11 ; lecture seule ; codes écrits en fichier local 0600, jamais renvoyés ; `GET compteOrigineED` |
+| `ed_admin_codes_connexion_regenerer` | 17/10/2026 | `ED_ADMIN_COMPTES_ACTIF=1` + `ED_ADMIN_CODES_DIR` | §11 ; `DELETE` puis `GET compteOrigineED` ; ⚠️ casse les associations de comptes ; comptes jamais activés |
+| `ed_admin_compte_debloquer` | 17/10/2026 | `ED_ADMIN_COMPTES_ACTIF=1` | §11 ; `DELETE blockingState` ; aperçu = état de blocage ; aucun secret |
+| `ed_admin_demander_changement_mdp` | 17/10/2026 | `ED_ADMIN_COMPTES_ACTIF=1` | §11 ; `PUT compteOrigineED` ; message au prochain login ; aucun secret, ne casse pas les associations |
 
-Communs aux six : simulation par défaut, `confirm=True` seulement après accord explicite en
-conversation, activation par variable d'environnement (jamais sur Azure), journal local.
+Communs aux outils d'écriture : simulation par défaut, `confirm=True` seulement après accord
+explicite en conversation, activation par variable d'environnement (jamais sur Azure). Les codes
+de connexion ne sont jamais renvoyés dans la réponse ni journalisés : seulement écrits dans un
+fichier local (0600) sous `ED_ADMIN_CODES_DIR`, à transmettre puis supprimer.
 **Aucun outil MCP** ne touche au mode de règlement ni aux coordonnées bancaires : l'assistant ne
 doit jamais voir ni saisir un IBAN.
 

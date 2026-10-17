@@ -55,11 +55,23 @@ async def test_forbidden_endpoint_never_hits_network(tmp_path):
 
 
 def test_client_exposes_no_write_helpers():
-    # Exception unique et explicite (16/09/2026) : set_parametre, la SEULE méthode
-    # d'écriture du client — voir sa propre garde-fous dans test_write_parametre.py
-    # (secrets/exclusions front refusés d'office, aperçu sans confirm=True). Toute
-    # AUTRE méthode qui apparaîtrait ici ferait échouer ce test, comme avant.
-    allowed_write_methods = {"set_parametre"}
+    # Écritures/accès à secrets SANCTIONNÉS ET EXPLICITES. Deux familles :
+    #  - paramètres établissement : set_parametre, ecrire_activation_connecteur
+    #    (16/09/2026, cf. test_write_parametre.py) ;
+    #  - gestion des comptes de connexion (17/10/2026) : lecture des codes de
+    #    première connexion, régénération, déblocage, changement de mot de passe —
+    #    endpoints compteOrigineED/blockingState, sinon bloqués par check_allowed.
+    # Toute AUTRE méthode préfixée post/put/delete/update/create/set/reinit ferait
+    # échouer ce test ; ces méthodes-ci sont nommées en clair et recensées ici.
+    allowed_write_methods = {
+        "set_parametre",
+        "ecrire_activation_connecteur",
+        "lire_codes_connexion",
+        "regenerer_codes_connexion",
+        "etat_blocage_compte",
+        "debloquer_compte",
+        "demander_changement_mdp",
+    }
     public = [n for n in dir(EcoleDirecteAdminClient) if not n.startswith("_")]
     for name in public:
         if name in allowed_write_methods:
