@@ -37,6 +37,12 @@ from . import parametres_catalogue as catalogue
 from .activation import compute_activation
 from .client import EcoleDirecteAdminClient, redact_user
 from .demandes import demande_activites, demande_coordonnees, demande_telephones
+from .codes_connexion import (
+    debloquer as _codes_debloquer,
+    demander_changement_mdp as _codes_demander_mdp,
+    lire_codes as _codes_lire,
+    regenerer_codes as _codes_regenerer,
+)
 from .depot_pieces import deposer_piece, etat_pieces
 from .documents import documents_ecole, documents_famille, telecharger_document, telecharger_piece
 from .edt import emploi_du_temps_enseignant
@@ -615,3 +621,74 @@ async def ed_admin_demande_coordonnees(compte_id: int, modifications: dict[str, 
     de mode de règlement (commande `…rib` lancée par l'utilisateur lui-même). `compte_id` = id du compte famille
     (ed_admin_familles_search)."""
     return await demande_coordonnees(_get_client(), compte_id, modifications, confirm)
+
+
+@mcp.tool()
+async def ed_admin_codes_connexion_lire(role: str, id_utilisateur: int) -> Any:
+    """LECTURE — récupère l'identifiant et le mot de passe de PREMIÈRE CONNEXION d'un
+    compte (endpoint admin compteOrigineED), pour une famille/un personnel qui
+    n'arrive pas à activer son espace et qui appelle ou écrit au secrétariat. Ne
+    modifie rien.
+
+    Les codes ne sont PAS renvoyés dans la réponse : ils sont écrits dans un fichier
+    local (droits 0600, sous ED_ADMIN_CODES_DIR) ; la réponse donne le chemin du
+    fichier et la présence des champs. Ouvrir le fichier pour transmettre les codes,
+    puis le supprimer.
+
+    `role` : eleve, responsable, conjoint, personnel ou professeur (ou le code court
+    E/1/2/A/P). `id_utilisateur` : id EcoleDirecte (ed_admin_*_search / list).
+    Garde-fous : ED_ADMIN_COMPTES_ACTIF=1 et ED_ADMIN_CODES_DIR requis (donc inactif
+    sur Azure). Endpoint normalement bloqué par le connecteur : accès réservé à cet
+    outil."""
+    return await _codes_lire(_get_client(), role, id_utilisateur)
+
+
+@mcp.tool()
+async def ed_admin_codes_connexion_regenerer(role: str, id_utilisateur: int,
+                                             confirm: bool = False) -> Any:
+    """ÉCRITURE — régénère les codes de première connexion d'un compte puis les relit
+    (endpoint admin, bouton « Réinitialiser les identifiants de connexion »).
+
+    ATTENTION : réinitialise l'identifiant ET le mot de passe sur EcoleDirecte et
+    SUPPRIME les associations de comptes de l'utilisateur (liens parent↔enfants,
+    compte partagé). À réserver aux comptes jamais activés ; pour un compte déjà
+    activé, préférer ed_admin_codes_connexion_lire ou
+    ed_admin_demander_changement_mdp.
+
+    Sans confirm=True (par défaut) : SIMULATION — aucun appel réseau, renvoie
+    l'avertissement. Il faut TOUJOURS l'accord explicite de l'utilisateur avant
+    confirm=True. Avec confirm=True : régénère, puis écrit les nouveaux codes dans un
+    fichier local (0600) sans les afficher. Garde-fous : ED_ADMIN_COMPTES_ACTIF=1 et
+    ED_ADMIN_CODES_DIR requis (inactif sur Azure)."""
+    return await _codes_regenerer(_get_client(), role, id_utilisateur, confirm)
+
+
+@mcp.tool()
+async def ed_admin_compte_debloquer(role: str, id_utilisateur: int,
+                                    confirm: bool = False) -> Any:
+    """ÉCRITURE — débloque un compte verrouillé après trop d'essais de connexion
+    (endpoint admin blockingState). N'expose aucun identifiant, ne casse rien.
+
+    Sans confirm=True (par défaut) : SIMULATION — lit et renvoie l'état de blocage
+    (est_bloque), rien n'est modifié. Avec confirm=True : débloque puis relit l'état.
+    Garde-fou : ED_ADMIN_COMPTES_ACTIF=1 (inactif sur Azure).
+
+    `role` : eleve, responsable, conjoint, personnel ou professeur (ou E/1/2/A/P)."""
+    return await _codes_debloquer(_get_client(), role, id_utilisateur, confirm)
+
+
+@mcp.tool()
+async def ed_admin_demander_changement_mdp(role: str, id_utilisateur: int,
+                                           confirm: bool = False) -> Any:
+    """ÉCRITURE — force un utilisateur à changer son mot de passe à sa prochaine
+    connexion (endpoint admin, bouton « Demander le changement de mot de passe »).
+    Il verra un message et devra changer son mot de passe avant de continuer.
+    Suppose qu'il peut déjà se connecter ; n'expose aucun identifiant, ne casse pas
+    les associations.
+
+    Sans confirm=True (par défaut) : SIMULATION — rien n'est envoyé. Avec
+    confirm=True : envoie la demande. Garde-fou : ED_ADMIN_COMPTES_ACTIF=1 (inactif
+    sur Azure).
+
+    `role` : eleve, responsable, conjoint, personnel ou professeur (ou E/1/2/A/P)."""
+    return await _codes_demander_mdp(_get_client(), role, id_utilisateur, confirm)

@@ -27,6 +27,12 @@ Garde-fous appliqués AU NIVEAU DU CLIENT (pas seulement par absence d'outil) :
      l'interface admin exclut elle-même de l'édition générique (bancaire,
      connecteurs, délais réglementaires — voir _FRONT_EXCLUDED_PARAM_MARKERS).
      Sans confirm=True, ne fait qu'un aperçu (rien n'est écrit).
+  4. GESTION DES COMPTES DE CONNEXION (17/10/2026) : `compteOrigineED/<type>/<id>`
+     et `blockingState/<type>/<id>` restent bloqués par check_allowed, mais sont
+     atteints par des méthodes dédiées (lire / régénérer les codes de 1re
+     connexion, débloquer, forcer le changement de mot de passe) via
+     `_appel_compte_raw`, leur propre chemin de code. Voir la section dédiée plus
+     bas et le module `codes_connexion`. Les codes ne sont jamais renvoyés en clair.
 """
 from __future__ import annotations
 
@@ -506,3 +512,112 @@ class EcoleDirecteAdminClient:
         if not isinstance(payload, dict):
             raise EcoleDirecteApiError(f"POST {path} : enveloppe inattendue")
         return payload
+
+    # ------------------------------------------------------------------
+    # GESTION DES COMPTES DE CONNEXION — seconde famille d'exceptions explicites
+    # (17/10/2026). Les endpoints `compteOrigineED/<type>/<id>` et
+    # `blockingState/<type>/<id>` restent INTERDITS par la route générique
+    # (check_allowed, _FORBIDDEN_PATH_PREFIXES) : ces méthodes dédiées sont le
+    # SEUL accès autorisé, calqué sur la console admin (service
+    # IdentifiantsUtilisateursService), pour répondre aux familles qui
+    # n'arrivent pas à activer leur espace. Aucune ne journalise de secret ;
+    # c'est la couche appelante (codes_connexion.py) qui écrit les codes dans un
+    # fichier local et ne les renvoie jamais en clair.
+    # Verbes : get (lire), delete (régénérer / débloquer), put (forcer le
+    # changement de mot de passe), conformément à l'intercepteur du front admin.
+    # ------------------------------------------------------------------
+    _TYPES_COURTS: tuple[str, ...] = ("E", "1", "2", "A", "P")
+
+    def _verifier_type_court(self, type_court: str) -> str:
+        if type_court not in self._TYPES_COURTS:
+            raise ToolError(
+                f"type court invalide : {type_court!r} — attendu parmi "
+                f"{self._TYPES_COURTS} (E=élève, 1=responsable, 2=conjoint, "
+                "A=personnel, P=professeur)."
+            )
+        return type_court
+
+    async def _appel_compte_raw(self, path: str, verbe: str, token: str) -> dict[str, Any]:
+        """Appel brut `verbe=<get|put|delete>` réservé à la gestion des comptes de
+        connexion. Ne passe JAMAIS par check_allowed : point d'entrée volontaire et
+        unique pour compteOrigineED / blockingState (cf. docstring de module)."""
+        url = f"{SETTINGS.api_base}{path.strip('/')}.awp?verbe={verbe}"
+        body = encode_form_data({"token": token})
+        try:
+            resp = await self._http.post(
+                url, content=body,
+                headers={"Content-Type": "application/x-www-form-urlencoded",
+                         "Accept": "application/json, text/plain, */*",
+                         "x-token": token, "User-Agent": SETTINGS.user_agent},
+            )
+        except httpx.HTTPError as exc:
+            raise EcoleDirecteApiError(f"{verbe} {path} : erreur réseau {type(exc).__name__}") from exc
+        if resp.status_code != 200:
+            raise EcoleDirecteApiError(f"{verbe} {path} : HTTP {resp.status_code}")
+        try:
+            payload = resp.json()
+        except ValueError as exc:
+            raise EcoleDirecteApiError(f"{verbe} {path} : réponse non JSON") from exc
+        if not isinstance(payload, dict):
+            raise EcoleDirecteApiError(f"{verbe} {path} : enveloppe inattendue")
+        return payload
+
+    async def _compte_appel(self, path: str, verbe: str) -> Any:
+        """Enveloppe avec re-login unique (comme get()) autour de _appel_compte_raw."""
+        for attempt in (1, 2):
+            session = await self._auth.ensure_session(self._http)
+            payload = await self._appel_compte_raw(path, verbe, session.token)
+            code = payload.get("code")
+            self._auth.update_token(payload.get("token"))
+            if code in AUTH_EXPIRED_CODES and attempt == 1:
+                self._auth.invalidate()
+                continue
+            if code in AUTH_EXPIRED_CODES:
+                raise AuthError(f"Session refusée après re-login (code {code}).")
+            if code == 403:
+                raise EcoleDirecteApiError(f"{verbe} {path} : accès refusé (403) pour ce compte admin.")
+            if code != 200:
+                raise EcoleDirecteApiError(
+                    f"{verbe} {path} : code {code} — {payload.get('message') or 'pas de message'}"
+                )
+            return payload.get("data")
+        raise AssertionError("unreachable")
+
+    async def lire_codes_connexion(self, type_court: str, id_user: int) -> dict[str, Any]:
+        """Lit (sans rien modifier) l'identifiant et le mot de passe de PREMIÈRE
+        CONNEXION d'un compte (GET compteOrigineED). Utile pour un compte jamais
+        activé. Renvoie le dict brut de l'API ({edNomUtilisateurOrigine,
+        edMotDePasseOrigine, at}) — la couche appelante NE doit jamais le renvoyer
+        tel quel à l'utilisateur, seulement l'écrire dans un fichier local."""
+        self._verifier_type_court(type_court)
+        return await self._compte_appel(f"compteOrigineED/{type_court}/{int(id_user)}", "get")
+
+    async def regenerer_codes_connexion(self, type_court: str, id_user: int) -> dict[str, Any]:
+        """Régénère les codes de première connexion (DELETE compteOrigineED =
+        reaffecteCompteOrigineED du front), PUIS les relit. ATTENTION : réinitialise
+        l'identifiant ET le mot de passe sur EcoleDirecte et SUPPRIME les
+        associations de comptes de l'utilisateur. Renvoie le dict brut des nouveaux
+        codes (à écrire en fichier local, jamais renvoyé en clair)."""
+        self._verifier_type_court(type_court)
+        chemin = f"compteOrigineED/{type_court}/{int(id_user)}"
+        await self._compte_appel(chemin, "delete")
+        return await self._compte_appel(chemin, "get")
+
+    async def etat_blocage_compte(self, type_court: str, id_user: int) -> dict[str, Any]:
+        """Indique si le compte est bloqué (GET blockingState → {isBloque: bool})."""
+        self._verifier_type_court(type_court)
+        data = await self._compte_appel(f"blockingState/{type_court}/{int(id_user)}", "get")
+        return data if isinstance(data, dict) else {"isBloque": None, "brut": data}
+
+    async def debloquer_compte(self, type_court: str, id_user: int) -> Any:
+        """Débloque un compte verrouillé après trop d'essais (DELETE blockingState).
+        N'expose aucun identifiant."""
+        self._verifier_type_court(type_court)
+        return await self._compte_appel(f"blockingState/{type_court}/{int(id_user)}", "delete")
+
+    async def demander_changement_mdp(self, type_court: str, id_user: int) -> Any:
+        """Force l'utilisateur à changer son mot de passe à sa prochaine connexion
+        (PUT compteOrigineED = forceUpdateMdpLogin). N'expose aucun identifiant et
+        ne casse pas les associations."""
+        self._verifier_type_court(type_court)
+        return await self._compte_appel(f"compteOrigineED/{type_court}/{int(id_user)}", "put")

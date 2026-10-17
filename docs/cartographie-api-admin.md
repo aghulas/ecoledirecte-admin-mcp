@@ -74,6 +74,8 @@ Confirmés en lecture sur données réelles (✅) ou vus seulement dans le code 
 | `banques`, `migrationPaiementv2` | coordonnées bancaires / paiements |
 | `televersement.awp`, `telechargement.awp`, `purgerEnt`, `messagerieED` (delete/migrate) | fichiers, purges |
 
+**Exception sanctionnée (17/10/2026)** : `compteOrigineED/{type}/{id}` et `blockingState/{type}/{id}` restent bloqués par la route générique, mais sont atteignables par quatre méthodes dédiées du client (`lire_codes_connexion`, `regenerer_codes_connexion`, `debloquer_compte`, `demander_changement_mdp` + `etat_blocage_compte`) pour la phase d'activation des familles — gestes de la console admin (service `IdentifiantsUtilisateursService`) : `GET compteOrigineED` (lire les codes de 1re connexion), `DELETE compteOrigineED` = `reaffecteCompteOrigineED` (régénérer, **supprime les associations**), `PUT compteOrigineED` = `forceUpdateMdpLogin` (changement de mdp au prochain login), `GET`/`DELETE blockingState` (état / déblocage). Types courts : E=élève, 1=responsable, 2=conjoint, A=personnel, P=professeur (`Utils.translateType`). Codes de 1re connexion jamais renvoyés en clair : écrits dans un fichier local 0600 (`ED_ADMIN_CODES_DIR`). Garde-fou `ED_ADMIN_COMPTES_ACTIF=1`.
+
 ## 5. Constats sur données réelles (16/09/2026)
 
 - `utilisateurs/familles` et `utilisateurs/eleves` avec `filterSearch` **vide** renvoient
