@@ -14,7 +14,7 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Créer une branche pour un changement non trivial.
 - Jamais de données d'élèves ou de familles dans un fichier versionné (lectures manuelles sous `~/Charlemagne/`). Dépôt public : aucun chemin de serveur propre à l'école (valeurs par défaut génériques, chemins réels dans la configuration locale). Aucun jeton dans les remotes (`git remote -v` masqué).
 - Le connecteur ne manipule jamais de mot de passe, d'IBAN ni de BIC.
-- Découvrir un endpoint : lire le JavaScript public du front (`www.ecoledirecte.com` → `chunk-*.js`, `main-*.js`), téléchargé sur le Mac dans un dossier temporaire hors dépôt (le cloud n'atteint pas ecoledirecte.com), supprimé après usage. API classique : `api.ecoledirecte.com/v3/….awp` (corps `data=<JSON>`) ; API REST du front (`withRestApi`) : `api.ecoledirecte.com/restv3/ws/…` (corps JSON).
+- Découvrir un endpoint : lire le JavaScript public du front (`www.ecoledirecte.com` → `chunk-*.js`, `main-*.js`, et l'admin `admin.ecoledirecte.com` → `scripts/scripts.*.js`), téléchargé sur le Mac dans un dossier temporaire hors dépôt (le cloud n'atteint pas ecoledirecte.com), supprimé après usage. API classique : `api.ecoledirecte.com/v3/….awp` (corps `data=<JSON>`) ; API REST du front (`withRestApi`) : `api.ecoledirecte.com/restv3/ws/…` (corps JSON).
 
 ## Messagerie perso (écriture)
 
@@ -54,6 +54,15 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Dépôt : `ed_admin_deposer_piece` (simulation vérifiée, ne remplace jamais une case remplie : déposer sur le compte de l'autre parent si la case est prise).
 - **Suppression : jamais par EcoleDirecte.** `POST listePiece/<liste>/<personne>/<pièce>.awp?verbe=delete` (bouton du site famille) a renvoyé **403 avec avertissement de sécurité** sur une pièce verrouillée (12/10/2026) : ne pas retenter, ne pas recoder. Une pièce se supprime dans Charlemagne (Tables › Gestion des pièces de dossier › Liste de pièces : « refuser la pièce » ou Gestion des documents › Supprimer) ; l'effet est immédiat dans EcoleDirecte (vérifié le 02/10/2026, sans attendre la synchro). Méthode de travail sur les pièces : skill `ecoledirecte-pieces-familles`.
 
+## Comptes de connexion (phase d'activation des familles, v0.14.0, 17/10/2026)
+
+- Quatre outils admin pour une famille/un personnel qui n'arrive pas à activer son espace (`codes_connexion.py`), calqués sur la console (service `IdentifiantsUtilisateursService`) : `ed_admin_codes_connexion_lire` (`GET compteOrigineED/{type}/{id}` → `edNomUtilisateurOrigine`, `edMotDePasseOrigine`, jeton QR `at`, lecture seule), `ed_admin_codes_connexion_regenerer` (`DELETE compteOrigineED` = `reaffecteCompteOrigineED`, puis relecture), `ed_admin_compte_debloquer` (`GET` puis `DELETE blockingState`), `ed_admin_demander_changement_mdp` (`PUT compteOrigineED` = `forceUpdateMdpLogin`).
+- **Type court** par `Utils.translateType` du front : élève=E, responsable=1, conjoint=2, personnel=A, professeur=P. Le paramètre d'outil `role` accepte le mot (eleve/responsable/conjoint/personnel/professeur) ou le code court.
+- **`compteOrigineED` et `blockingState` restent bloqués par la route générique** (`check_allowed`, `_FORBIDDEN_PATH_PREFIXES`) : seules les méthodes dédiées du client (`lire_codes_connexion`, `regenerer_codes_connexion`, `etat_blocage_compte`, `debloquer_compte`, `demander_changement_mdp`) y accèdent, par un chemin séparé (`_appel_compte_raw`), comme `set_parametre`. Le test `test_client_exposes_no_write_helpers` recense ces écritures ; `test_forbidden_endpoints_blocked_even_in_get` doit continuer à bloquer ces endpoints par la route générique.
+- **Les codes de première connexion ne transitent jamais en clair** : ni renvoyés par l'outil, ni journalisés, ni affichés dans la conversation — écrits dans un fichier local 0600 sous `ED_ADMIN_CODES_DIR` (absent sur Azure → outils inactifs). La réponse ne donne que le chemin et la présence des champs. Pour préparer un mail avec les codes : tout faire **en local sur le Mac** (script qui lit le fichier des codes et écrit le mail / la PJ PDF — `cupsfilter` sur macOS — / un `.eml`), jamais via un connecteur (le connecteur Outlook n'a d'ailleurs pas d'outil de pièce jointe, et y faire passer un code le mettrait dans l'appel et les journaux).
+- Garde-fous : `ED_ADMIN_COMPTES_ACTIF=1` (jamais sur Azure) ; simulation par défaut pour les écritures (`confirm=True` après accord explicite). **La régénération supprime les associations de comptes et réinitialise identifiant + mot de passe** : à réserver aux comptes jamais activés ; ne jamais la lancer sur un compte déjà actif (dont le compte admin du connecteur). Pour un compte déjà activé : lecture des codes ou demande de changement de mot de passe.
+- Le formulaire **public « mot de passe oublié »** (`api.ecoledirecte.com/mot-de-passe-oublie.awp`) envoie un lien à l'adresse/au téléphone enregistré mais est protégé par un **CAPTCHA** image (champ « Code de sécurité », `WD_ACTION_=IMAGE`) : non automatisable, écarté. Aucun envoi mail/SMS des codes côté admin (la console les affiche seulement).
+
 ## Lire la messagerie du secrétariat
 
 - Directement depuis le 08/10/2026 : serveur `ecoledirecte-secretariat` (instance du serveur perso sur le compte du secrétariat) — `ed_perso_messages_list` (ne marque rien lu), `ed_perso_message_lire` (remet en non lu par défaut), pièces jointes listées.
@@ -85,14 +94,14 @@ description: "Modifier, tester, pousser et documenter le connecteur MCP EcoleDir
 - Commit depuis le Mac (Desktop Commander) : l'outil peut refuser une commande dont le message de commit est écrit dedans (« Command not allowed », constaté le 08/10/2026 avec un message en heredoc contenant des balises `<div>`) — écrire le message dans un fichier temporaire (`write_file`), puis `git commit -F <fichier>`, et supprimer le fichier.
 - Version dans `pyproject.toml` incrémentée pour un nouvel outil ou paramètre (numéro de correctif pour un correctif).
 - Fusion `--ff-only` dans `main`, push, suppression de la branche.
-- Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac, sans `sleep` long : l'appel est coupé au bout de 60 s) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure.
+- Le push déclenche deux workflows GitHub Actions (déploiement Azure admin et perso) : suivre avec `gh run list --limit 2` (depuis le Mac, sans `sleep` long : l'appel est coupé au bout de 60 s) jusqu'à `success` (plusieurs minutes). Les écritures restent désactivées sur Azure (les variables d'activation, dont `ED_ADMIN_COMPTES_ACTIF` et `ED_ADMIN_CODES_DIR`, n'y sont pas posées).
 - Rappeler à Rémi de **redémarrer complètement Claude Desktop** : les outils d'une conversation déjà ouverte gardent l'ancienne version.
 - Toute édition de `claude_desktop_config.json` : sauvegarde horodatée avant, validation JSON après.
 
 ## Documentation à tenir à jour
 
 - `README.md` du dépôt (tableau des outils, sections dédiées), version dans `pyproject.toml`, `package-data` si nouveaux fichiers de données.
-- `openapi/ecoledirecte-wrapper.openapi.yaml` (Swagger 2.0 pour Copilot Studio) : aligner les opérations, ajouter les `definitions`, incrémenter la version, valider avec `openapi-spec-validator` (attention aux virgules dans les descriptions en style `{ … }` : les mettre entre guillemets). Supervision, dépôts, demandes, documents et messagerie restent hors de ce contrat.
+- `openapi/ecoledirecte-wrapper.openapi.yaml` (Swagger 2.0 pour Copilot Studio) : aligner les opérations, ajouter les `definitions`, incrémenter la version, valider avec `openapi-spec-validator` (attention aux virgules dans les descriptions en style `{ … }` : les mettre entre guillemets). Supervision, dépôts, demandes, documents, messagerie et comptes de connexion restent hors de ce contrat.
 - Spec du projet `claude/spec-connecteur-mcp-ecoledirecte.md` : lire, modifier, réécrire en entier (`project_write`) — statut et dernier commit en tête, authentification (§2), tableaux d'outils (§3/§4), écritures (§5), limites (§8), incidents et enseignements (§9).
 - Si l'usage change, mettre à jour aussi la skill `ecoledirecte-communication-familles`.
 
