@@ -48,7 +48,11 @@ class FakeClient:
     async def passage_web_prevus(self, id_pdp):
         return PREVUS
 
+    api_points = {6, 7, 8, 10}  # points que l'API accepte (10 : créé après la connexion)
+
     async def passage_web_jour(self, id_pdp, jour):
+        if id_pdp not in self.api_points:
+            raise cl.EcoleDirectePersoApiError(f"get PassageWeb/{id_pdp} : code 550")
         return [p for p in self.jour if p["idPDP"] == id_pdp and p["date"] == jour]
 
     async def niveaux(self):
@@ -116,6 +120,14 @@ async def test_prevus_sans_donnees_sensibles(env):
 async def test_point_inconnu_refuse(env):
     with pytest.raises(pw.PassageWebError):
         await pw.prevus(FakeClient(), 99)
+
+
+async def test_point_cree_apres_connexion_accepte(env):
+    # absent de listePDP (session ouverte avant sa création) mais accepté par l'API
+    r = await pw.prevus(FakeClient(), 10)
+    assert r["point"]["id"] == 10 and r["point"]["hors_liste_session"] is True
+    j = await pw.passages_du_jour(FakeClient(), 10, "2026-10-22")
+    assert j["point"]["hors_liste_session"] is True
 
 
 # --- pointage --------------------------------------------------------------------

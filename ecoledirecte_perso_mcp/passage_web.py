@@ -136,6 +136,23 @@ def _point(client, id_pdp: int) -> dict[str, Any]:
     raise PassageWebError(f"Point Passage Web {id_pdp} absent des points du compte.")
 
 
+async def _point_verifie(client, id_pdp: int) -> dict[str, Any]:
+    """Point de la liste mémorisée au login ; sinon, point créé ou attribué depuis la connexion
+    (constaté le 23/10/2026 : point « Retard Etude » ajouté en soirée, absent de listePDP jusqu'à
+    une nouvelle connexion, alors que l'API l'acceptait) : accepté seulement si l'API répond
+    pour ce point (lecture des passages du jour), avec la mention hors_liste_session."""
+    try:
+        return _point(client, id_pdp)
+    except PassageWebError:
+        try:
+            await client.passage_web_jour(int(id_pdp), _date.today().isoformat())
+        except Exception as exc:  # noqa: BLE001 — tout refus de l'API = point inconnu
+            raise PassageWebError(f"Point Passage Web {id_pdp} absent des points du compte "
+                                  f"et refusé par EcoleDirecte ({type(exc).__name__}).") from exc
+        return {"id": int(id_pdp), "libelle": "(point hors liste de la session : reconnexion conseillée)",
+                "heureDebut": None, "heureFin": None, "hors_liste_session": True}
+
+
 async def lister_points(client) -> list[dict[str, Any]]:
     await client.auth.ensure_session(client._http)
     return points(client)
@@ -143,7 +160,7 @@ async def lister_points(client) -> list[dict[str, Any]]:
 
 async def prevus(client, id_pdp: int) -> dict[str, Any]:
     await client.auth.ensure_session(client._http)
-    p = _point(client, id_pdp)
+    p = await _point_verifie(client, id_pdp)
     data = await client.passage_web_prevus(p["id"])
     eleves = [_public(e) for e in (data or []) if isinstance(e, dict)]
     return {"point": p, "nombre": len(eleves), "eleves": eleves}
@@ -158,7 +175,7 @@ async def _passages_du_jour(client, id_pdp: int, jour: str) -> list[dict[str, An
 
 async def passages_du_jour(client, id_pdp: int, jour: str) -> dict[str, Any]:
     await client.auth.ensure_session(client._http)
-    p = _point(client, id_pdp)
+    p = await _point_verifie(client, id_pdp)
     try:
         d = datetime.strptime(jour, "%Y-%m-%d").date()
     except (TypeError, ValueError) as exc:
@@ -204,7 +221,7 @@ def _journaliser(action: str, id_pdp: int, jour: str, heure: str, id_eleve: Any,
 async def pointer(client, id_pdp: int, jour: str, heure: str, id_eleves: list[int],
                   badges: dict[str, str] | None = None, confirm: bool = False) -> dict[str, Any]:
     await client.auth.ensure_session(client._http)
-    p = _point(client, id_pdp)
+    p = await _point_verifie(client, id_pdp)
     verifier_date(jour)
     verifier_heure(heure)
     ids: list[int] = []
@@ -282,7 +299,7 @@ async def pointer(client, id_pdp: int, jour: str, heure: str, id_eleves: list[in
 async def supprimer(client, id_pdp: int, jour: str, ids_passage_web: list[int],
                     confirm: bool = False) -> dict[str, Any]:
     await client.auth.ensure_session(client._http)
-    p = _point(client, id_pdp)
+    p = await _point_verifie(client, id_pdp)
     verifier_date(jour)
     lus = {int(x["idPassageWeb"]): x for x in await _passages_du_jour(client, p["id"], jour)
            if x.get("idPassageWeb") is not None}
@@ -309,6 +326,12 @@ async def supprimer(client, id_pdp: int, jour: str, ids_passage_web: list[int],
             x["statut"] = "supprimé"
         except ToolError as exc:
             x["statut"] = f"erreur : {exc}"
+            if "code 550" in str(exc):
+                # Constaté le 23/10/2026 (3 passages Retard Etude datés de septembre) : même appel
+                # que le front (POST PassageWeb/<id>?verbe=delete, data={}), refusé par le serveur
+                # sans motif. Le passage reste en attente : il sera intégré (ou rejeté) par Charlemagne.
+                x["statut"] += (" — EcoleDirecte refuse la suppression : essayer depuis l'écran Passage Web, "
+                                "sinon annuler le passage dans Charlemagne après l'intégration")
         _journaliser("supprimer", p["id"], jour, x.get("heure") or "", x.get("idEleve"), x["idPassageWeb"], x["statut"])
     return {"mode": "écriture", "point": p, "date": jour, "supprimes": sum(x["statut"] == "supprimé" for x in plan),
             "passages": plan}

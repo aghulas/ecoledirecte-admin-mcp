@@ -202,3 +202,26 @@ Relevé dans le front public (`PassageWebService`, `PassagesWebModule`, route `/
 - Suppression : `POST v3/PassageWeb/<idPassageWeb>.awp?verbe=delete`, `data={}`.
 - Intégration : Charlemagne Passage › Passage Web › Intégration ; le prix est calculé à ce
   moment-là selon les coches **actuelles** de la fiche élève pour le jour de la semaine du passage.
+
+Constats du rattrapage (23/10/2026, ~12 130 passages de septembre-octobre, 0 erreur au bilan) :
+
+- **`listePDP` est figée au login** : un point créé ou attribué ensuite (« Retard Etude », n° 05,
+  IDPDP 10) n'y figure pas, alors que l'API accepte lecture et pointage sur ce point. Le connecteur
+  l'accepte désormais si `recupDesPassagesWeb` répond (`hors_liste_session: true`) ; une
+  reconnexion (`auth login`, code TOTP) remet la liste à jour.
+- **Suppression refusée** (`code 550`, « Une erreur est survenue lors de l'exécution du
+  programme ») pour 3 passages non intégrés datés de septembre, avec exactement l'appel du front
+  (`deletePassageWeb` : `POST PassageWeb/<id>` `{}` `verbe=delete`). `dateTransmission` est posée
+  dès la création : ce n'est pas elle qui distingue. Motif inconnu (jour passé ?) ; le statut
+  renvoyé le dit et oriente vers l'écran Passage Web ou l'annulation dans Charlemagne.
+- **« Ajout impossible en dehors du créneau horaire » (`code 550`)** : 3 refus à 20 h 55 sur le
+  point Étude pendant que Rémi en changeait les heures (06:00-20:00 → 16:30-22:00) ; le même envoi
+  est passé à 21 h 01. Le contrôle porte sur le créneau du point, côté serveur.
+- **Un passage = un article** : un point Passage Web ne valide qu'un article. Retard du soir sur
+  un point distinct (article de type temps, pointage à la sortie : prix = quarts d'heure entre
+  le début de l'article et l'heure du passage ; essai 18:30 → 20:42 = 9 × 15 € = 135 €).
+- **Intégration refusée sans tarif à la date** : « Impossible d'importer le passage de l'article
+  Retard Soir, en date du 25/09/2026 il n'existe pas de tarif » (tarif daté du 01/10) ; le passage
+  reste en attente côté EcoleDirecte et revient à chaque intégration.
+- Une intégration lancée pendant un envoi prend ce qui est arrivé ; le reste vient à la suivante.
+  Les passages intégrés restent listés par `recupDesPassagesWeb` (reprise sans doublon possible).
