@@ -177,3 +177,28 @@ Relevé dans le front (module messagerie, `messagerie-compose`) :
 Implémentation : `client.lire_message` / `poster_message` par un chemin dédié (`_appel_messagerie`)
 qui n'accepte que ces trois opérations ; `check_allowed` continue de bloquer tout le reste.
 Validé en réel le 01/10/2026 (brouillon n°12 adressé au compte lui-même, relu, accents intacts).
+
+
+## Passage Web (Charlemagne Passage) — lecture et pointage (23/10/2026)
+
+Relevé dans le front public (`PassageWebService`, `PassagesWebModule`, route `/PassageWeb`, garde
+`T.PERSONNEL`, module `PASSAGEWEB`). Corrige le §8 pour les établissements qui ont paramétré Passage.
+
+- Points du compte : au login, `accounts[0].modules[code=PASSAGEWEB].params.listePDP`
+  = `id:libellé:HHMM:HHMM||…` (id = IDPDP Charlemagne). Désignation des adultes côté Charlemagne
+  (point Passage Web, onglet adultes) puis envoi vers EcoleDirecte.
+- `POST v3/PassageWeb/<pdp>/recupDesPassagesPrevus.awp?verbe=get` → élèves prévus du jour
+  (`idEleve`, nom, prénom, classe, régime, `badge`, photo, date de naissance) d'après le suivi Vie
+  scolaire rattaché au point ; `…/recupDesRestrictions` (classes / régimes exclus) ;
+  `…/recupDesClasses`.
+- `POST v3/PassageWeb/<pdp>/recupDesPassagesWeb/<AAAA-MM-JJ>.awp?verbe=get` → passages du jour
+  (`idPassageWeb`, `idPassant`, `typePassant`, `date`, `heure` « HH:MM:SS », `dateTransmission`,
+  `dateAcq` renseignée une fois intégré par Charlemagne).
+- Pointage : même chemin en `verbe=post`, `data={"passageWeb": {idPassageWeb:0, idPassant,
+  typePassant:"E", date:"AAAA-MM-JJ", heure:"HH:MM", idPDP, dateTransmission:"", dateAcq:"", nom,
+  prenom, particule, dateNaissance:"", sexe, photo:"", badge}}` → `data.idPassageWeb`. **Le front
+  fixe date et heure côté navigateur** ; une date passée est acceptée et conservée par
+  Charlemagne à l'intégration (essai du 23/10/2026 : 6 passages au 22/10, puis 443 au 03/09).
+- Suppression : `POST v3/PassageWeb/<idPassageWeb>.awp?verbe=delete`, `data={}`.
+- Intégration : Charlemagne Passage › Passage Web › Intégration ; le prix est calculé à ce
+  moment-là selon les coches **actuelles** de la fiche élève pour le jour de la semaine du passage.

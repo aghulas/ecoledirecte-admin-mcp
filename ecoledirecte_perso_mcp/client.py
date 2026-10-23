@@ -358,6 +358,65 @@ class EcoleDirectePersoClient:
         base = f"{self._word()}/{self._account_id()}/messages"
         return await self._appel_messagerie(base, "post", {}, {"message": message, "anneeMessages": ""})
 
+    # ------------------------------------------------------------------
+    # Passage Web (23/10/2026) — module passage_web
+    # ------------------------------------------------------------------
+    def points_passage_web(self) -> str:
+        """Paramètre listePDP du module PASSAGEWEB, mémorisé au login (vide si aucun point)."""
+        return str(self._auth.session.account.get("listePDP") or "")
+
+    async def passage_web_prevus(self, id_pdp: int) -> Any:
+        return await self.get(f"PassageWeb/{int(id_pdp)}/recupDesPassagesPrevus")
+
+    async def passage_web_jour(self, id_pdp: int, date: str) -> Any:
+        return await self.get(f"PassageWeb/{int(id_pdp)}/recupDesPassagesWeb/{date}")
+
+    async def passage_web_restrictions(self, id_pdp: int) -> Any:
+        return await self.get(f"PassageWeb/{int(id_pdp)}/recupDesRestrictions")
+
+    async def _appel_passage_web(self, verbe: str, path: str, data: dict[str, Any]) -> Any:
+        """Seules écritures Passage Web autorisées (chemin dédié, hors check_allowed) :
+          - POST PassageWeb/<pdp>/recupDesPassagesWeb/<AAAA-MM-JJ> avec {passageWeb:{…}} ;
+          - DELETE PassageWeb/<idPassageWeb> avec {} ;
+        et seulement si ED_PERSO_PASSAGEWEB_ACTIF=1."""
+        if os.environ.get("ED_PERSO_PASSAGEWEB_ACTIF") != "1":
+            raise ForbiddenEndpointError("Écriture Passage Web désactivée (ED_PERSO_PASSAGEWEB_ACTIF≠1).")
+        ok_post = verbe == "post" and re.fullmatch(r"PassageWeb/\d+/recupDesPassagesWeb/\d{4}-\d{2}-\d{2}", path) \
+            and set(data) == {"passageWeb"} and isinstance(data["passageWeb"], dict)
+        ok_delete = verbe == "delete" and re.fullmatch(r"PassageWeb/\d+", path) and data == {}
+        if not (ok_post or ok_delete):
+            raise ForbiddenEndpointError(f"Opération Passage Web non autorisée : {verbe} {path}")
+        for attempt in (1, 2):
+            session = await self._auth.ensure_session(self._http)
+            params = {"verbe": verbe, "v": SETTINGS.api_version}
+            url = f"{SETTINGS.data_base}/{path}.awp?{urlencode(params)}"
+            try:
+                resp = await self._http.post(url, content=encode_form_data(data), headers={
+                    "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json",
+                    "X-Token": session.token, "User-Agent": SETTINGS.user_agent})
+                payload = resp.json()
+            except (httpx.HTTPError, ValueError) as exc:
+                raise EcoleDirectePersoApiError(f"{verbe} {path} : {type(exc).__name__}") from exc
+            self._auth.update_token(payload.get("token"))
+            if payload.get("code") in AUTH_EXPIRED_CODES and attempt == 1:
+                self._auth.invalidate_token()
+                continue
+            if payload.get("code") != 200:
+                raise EcoleDirectePersoApiError(
+                    f"{verbe} {path} : code {payload.get('code')} — {payload.get('message') or ''}")
+            return payload.get("data")
+        raise AssertionError("unreachable")
+
+    async def ajouter_passage_web(self, passage: dict[str, Any]) -> Any:
+        """Appelé uniquement par passage_web.pointer (simulation, accord, confirm=True)."""
+        return await self._appel_passage_web(
+            "post", f"PassageWeb/{int(passage['idPDP'])}/recupDesPassagesWeb/{passage['date']}",
+            {"passageWeb": passage})
+
+    async def supprimer_passage_web(self, id_passage_web: int) -> Any:
+        """Appelé uniquement par passage_web.supprimer (simulation, accord, confirm=True)."""
+        return await self._appel_passage_web("delete", f"PassageWeb/{int(id_passage_web)}", {})
+
     async def agenda_evenements(self) -> Any:
         return await self.get(f"{self._word()}/{self._account_id()}/agendaEvenements")
 

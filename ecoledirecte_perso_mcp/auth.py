@@ -200,6 +200,11 @@ class PersoAuth:
             raise AuthError("Login OK mais aucun compte dans la réponse.")
         self.session.token = body["token"]
         self.session.account = {k: accounts[0].get(k) for k in ("id", "typeCompte", "nom", "prenom")}
+        # Points Passage Web attribués au compte (module PASSAGEWEB, paramètre listePDP
+        # « id:libellé:HHMM:HHMM||… », 23/10/2026) : seule donnée de module conservée.
+        for m in accounts[0].get("modules") or []:
+            if isinstance(m, dict) and m.get("code") == "PASSAGEWEB" and m.get("enable"):
+                self.session.account["listePDP"] = str((m.get("params") or {}).get("listePDP") or "")
         self.store.save(self.session)
         return self.session
 

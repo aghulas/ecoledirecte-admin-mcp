@@ -20,6 +20,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from .messagerie_ecriture import modifier_brouillon, preparer_message, rechercher_contacts, supprimer_brouillon
+from . import passage_web
 from .client import EcoleDirectePersoClient
 from .pieces_jointes import telecharger_piece_jointe
 
@@ -208,6 +209,51 @@ async def ed_perso_brouillon_supprimer(id_message: int, confirm: bool = False) -
     l'accord explicite avant confirm=True ; suppression définitive. Garde-fous :
     ED_PERSO_MESSAGERIE_ACTIF=1 ; un seul brouillon par appel ; journal."""
     return await supprimer_brouillon(_get_client(), id_message, confirm)
+
+
+@mcp.tool()
+async def ed_perso_passage_web_points() -> Any:
+    """Points Passage Web (Charlemagne Passage) attribués au compte connecté :
+    id, libellé, plage horaire. Vide si la fiche adulte n'est pas désignée sur un point."""
+    return await passage_web.lister_points(_get_client())
+
+
+@mcp.tool()
+async def ed_perso_passage_web_prevus(id_pdp: int) -> Any:
+    """Élèves PRÉVUS aujourd'hui sur un point Passage Web (coches du suivi rattaché au point,
+    réservations du jour) : idEleve, nom, prénom, classe, régime. Ni badge ni photo."""
+    return await passage_web.prevus(_get_client(), id_pdp)
+
+
+@mcp.tool()
+async def ed_perso_passage_web_jour(id_pdp: int, date: str) -> Any:
+    """Passages Web déjà enregistrés sur un point un jour donné (date AAAA-MM-JJ) :
+    idPassageWeb, élève, heure, `integre` (récupéré par Charlemagne ou non)."""
+    return await passage_web.passages_du_jour(_get_client(), id_pdp, date)
+
+
+@mcp.tool()
+async def ed_perso_passage_web_pointer(id_pdp: int, date: str, heure: str, id_eleves: list[int],
+                                       badges: dict[str, str] | None = None, confirm: bool = False) -> Any:
+    """ÉCRITURE — enregistre des passages Web (présence à la cantine, garderie, étude) sur un
+    point, pour une date (AAAA-MM-JJ, jamais future) et une heure (HH:MM), comme l'écran
+    « Passage Web » d'EcoleDirecte. `id_eleves` = identifiants d'élèves (= IDELEVE Charlemagne).
+    `badges` facultatif {idEleve: numéro} pour les élèves non prévus (sinon badge vide).
+    Sans confirm=True : SIMULATION (à pointer, déjà pointés, inconnus) — la montrer et obtenir
+    l'accord explicite avant confirm=True. Jamais de doublon (même élève, point, jour).
+    Garde-fous : ED_PERSO_PASSAGEWEB_ACTIF=1 ; ED_PERSO_PASSAGEWEB_MAX par appel (80) ;
+    une seconde entre deux envois ; journal local. Les passages entrent dans Charlemagne
+    seulement après Passage › Passage Web › Intégration (faite par une personne)."""
+    return await passage_web.pointer(_get_client(), id_pdp, date, heure, id_eleves, badges, confirm)
+
+
+@mcp.tool()
+async def ed_perso_passage_web_supprimer(id_pdp: int, date: str, ids_passage_web: list[int],
+                                         confirm: bool = False) -> Any:
+    """ÉCRITURE — supprime des passages Web PAS ENCORE INTÉGRÉS dans Charlemagne (ids lus par
+    ed_perso_passage_web_jour sur ce point et ce jour). Un passage déjà intégré s'annule dans
+    Charlemagne Passage. Sans confirm=True : SIMULATION. Garde-fou : ED_PERSO_PASSAGEWEB_ACTIF=1."""
+    return await passage_web.supprimer(_get_client(), id_pdp, date, ids_passage_web, confirm)
 
 
 @mcp.tool()

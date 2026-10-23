@@ -72,7 +72,10 @@ def test_client_has_no_write_helpers():
     # Seule exception (08/10/2026) : suppression d'UN brouillon, verrouillée dans
     # _appel_messagerie (dossier -5, un id, ED_PERSO_MESSAGERIE_ACTIF=1) et testée
     # dans test_messagerie_perso.py.
-    autorisees = {"supprimer_brouillon_brut"}
+    # Deuxième exception (23/10/2026) : suppression d'un passage Web non intégré,
+    # verrouillée dans _appel_passage_web (ED_PERSO_PASSAGEWEB_ACTIF=1), testée dans
+    # test_passage_web.py.
+    autorisees = {"supprimer_brouillon_brut", "supprimer_passage_web"}
     for n in dir(EcoleDirectePersoClient):
         if not n.startswith("_") and n not in autorisees:
             assert not any(w in n.lower() for w in write_words), n
