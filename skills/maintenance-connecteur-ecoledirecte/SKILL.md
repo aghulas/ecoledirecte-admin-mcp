@@ -9,6 +9,18 @@ description: Modifier, tester, pousser et documenter le connecteur MCP EcoleDire
 
 À utiliser pour toute évolution des serveurs `ecoledirecte-admin` / `ecoledirecte-perso` : nouvel outil, correctif, régénération du catalogue des paramètres, mise à jour de la doc OpenAPI.
 
+## Branches, CI et fusion (à lire d'abord)
+
+Plusieurs sessions travaillent sur ce dépôt : suivre `CLAUDE.md` à la racine du dépôt.
+
+- Ne rien modifier dans `~/dev/ecoledirecte-admin-mcp` ni sur la branche principale : une tâche = une branche `claude/<sujet>` dans son
+  propre dossier (`git worktree`).
+- Travail prêt : push de la branche puis pull request. Le CI GitHub (tests, skills, secrets) la fusionne s'il est vert,
+  puis les marketplaces sont régénérées et poussées automatiquement.
+- Ne pas lancer `generer_catalogues.py --ecrire`, ne rien pousser dans un dépôt `*-marketplace`, ne pas proposer de carte
+  de skill.
+- Là où cette skill dit « commit, push », lire : commit sur la branche, push de la branche, pull request.
+
 ## Où et comment travailler
 
 - Dépôt local : `~/dev/ecoledirecte-admin-mcp` (venv `.venv`, installation éditable), qui contient les deux paquets `ecoledirecte_admin_mcp` et `ecoledirecte_perso_mcp`. Travailler sur place (Desktop Commander / terminal du Mac), jamais sur une copie dans le cloud.
